@@ -159,6 +159,7 @@ const Dartboard = ({ onHit, size = 300, numberSize = 14 }) => {
   const [isMobile] = useState(() => 'ontouchstart' in window || navigator.maxTouchPoints > 0);
   const [ctrlPressed, setCtrlPressed] = useState(false);
   const longPressTimer = React.useRef(null);
+  const touchStartTime = React.useRef(0);
 
   // Desktop: Listen for Ctrl key
   useEffect(() => {
@@ -179,47 +180,6 @@ const Dartboard = ({ onHit, size = 300, numberSize = 14 }) => {
     const x = ((clientX - rect.left) / rect.width) * 400;
     const y = ((clientY - rect.top) / rect.height) * 400;
     return { x, y };
-  };
-
-  // Mouse move for desktop magnifier
-  const handleMouseMove = (e) => {
-    if (ctrlPressed) {
-      const { x, y } = getSvgCoords(e.clientX, e.clientY);
-      setMagnifier({ active: true, x: e.clientX, y: e.clientY, svgX: x, svgY: y });
-    }
-  };
-
-  // Touch handlers for mobile magnifier
-  const handleTouchStart = (e) => {
-    if (isMobile) {
-      const touch = e.touches[0];
-      longPressTimer.current = setTimeout(() => {
-        const { x, y } = getSvgCoords(touch.clientX, touch.clientY);
-        setMagnifier({ active: true, x: touch.clientX, y: touch.clientY - 80, svgX: x, svgY: y });
-      }, 300);
-    }
-  };
-
-  const handleTouchMove = (e) => {
-    if (magnifier.active && isMobile) {
-      const touch = e.touches[0];
-      const { x, y } = getSvgCoords(touch.clientX, touch.clientY);
-      setMagnifier({ active: true, x: touch.clientX, y: touch.clientY - 80, svgX: x, svgY: y });
-    }
-  };
-
-  const handleTouchEnd = (e) => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current);
-    if (magnifier.active) {
-      // Determine what was hit based on magnifier position
-      const { svgX, svgY } = magnifier;
-      const hitResult = getHitFromCoords(svgX, svgY);
-      if (hitResult) {
-        onHit(hitResult.number, hitResult.multiplier);
-      }
-      setMagnifier({ active: false, x: 0, y: 0, svgX: 0, svgY: 0 });
-      e.preventDefault();
-    }
   };
 
   // Determine what segment is at given SVG coordinates
@@ -245,7 +205,73 @@ const Dartboard = ({ onHit, size = 300, numberSize = 14 }) => {
     return { number, multiplier };
   };
 
-  const segment = (ro, ri, sa, ea, fill, n, mult) => {
+  // Mouse move for desktop magnifier
+  const handleMouseMove = (e) => {
+    if (ctrlPressed) {
+      const { x, y } = getSvgCoords(e.clientX, e.clientY);
+      setMagnifier({ active: true, x: e.clientX, y: e.clientY, svgX: x, svgY: y });
+    }
+  };
+
+  // Handle click - works with or without magnifier
+  const handleClick = (e) => {
+    const { x, y } = getSvgCoords(e.clientX, e.clientY);
+    const hitResult = getHitFromCoords(x, y);
+    if (hitResult) {
+      onHit(hitResult.number, hitResult.multiplier);
+    }
+  };
+
+  // Touch handlers for mobile magnifier
+  const handleTouchStart = (e) => {
+    touchStartTime.current = Date.now();
+    if (isMobile) {
+      const touch = e.touches[0];
+      longPressTimer.current = setTimeout(() => {
+        const { x, y } = getSvgCoords(touch.clientX, touch.clientY);
+        setMagnifier({ active: true, x: touch.clientX, y: touch.clientY - 80, svgX: x, svgY: y });
+      }, 300);
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    // If touch moves significantly, cancel the long press
+    if (longPressTimer.current && !magnifier.active) {
+      clearTimeout(longPressTimer.current);
+    }
+    if (magnifier.active && isMobile) {
+      const touch = e.touches[0];
+      const { x, y } = getSvgCoords(touch.clientX, touch.clientY);
+      setMagnifier({ active: true, x: touch.clientX, y: touch.clientY - 80, svgX: x, svgY: y });
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+
+    const touchDuration = Date.now() - touchStartTime.current;
+
+    if (magnifier.active) {
+      // Magnifier was active - hit where the crosshair is
+      const { svgX, svgY } = magnifier;
+      const hitResult = getHitFromCoords(svgX, svgY);
+      if (hitResult) {
+        onHit(hitResult.number, hitResult.multiplier);
+      }
+      setMagnifier({ active: false, x: 0, y: 0, svgX: 0, svgY: 0 });
+      e.preventDefault();
+    } else if (touchDuration < 300 && e.changedTouches.length > 0) {
+      // Quick tap - normal hit
+      const touch = e.changedTouches[0];
+      const { x, y } = getSvgCoords(touch.clientX, touch.clientY);
+      const hitResult = getHitFromCoords(x, y);
+      if (hitResult) {
+        onHit(hitResult.number, hitResult.multiplier);
+      }
+    }
+  };
+
+  const segment = (ro, ri, sa, ea, fill, n, mult, isInteractive = true) => {
     const x1o = cx + Math.cos(sa) * ro, y1o = cy + Math.sin(sa) * ro;
     const x2o = cx + Math.cos(ea) * ro, y2o = cy + Math.sin(ea) * ro;
     const x1i = cx + Math.cos(ea) * ri, y1i = cy + Math.sin(ea) * ri;
@@ -259,8 +285,8 @@ const Dartboard = ({ onHit, size = 300, numberSize = 14 }) => {
         fill={fill}
         stroke="#333"
         strokeWidth="0.5"
-        className="cursor-pointer transition-all duration-100 hover:brightness-125 active:brightness-150"
-        onClick={() => !magnifier.active && onHit(n, mult)}
+        className={isInteractive ? "cursor-pointer dartboard-segment" : ""}
+        style={isInteractive ? { pointerEvents: 'all' } : { pointerEvents: 'none' }}
       />
     );
   };
@@ -282,6 +308,7 @@ const Dartboard = ({ onHit, size = 300, numberSize = 14 }) => {
         style={{ width: size, height: size, filter: 'drop-shadow(0 8px 32px rgba(0,0,0,0.5))' }}
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setMagnifier(m => ({ ...m, active: false }))}
+        onClick={!isMobile ? handleClick : undefined}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -303,14 +330,12 @@ const Dartboard = ({ onHit, size = 300, numberSize = 14 }) => {
         <circle
           cx={cx} cy={cy} r="40"
           fill="#2a9d8f"
-          className="cursor-pointer transition-all duration-100 hover:brightness-125 active:brightness-150"
-          onClick={() => !magnifier.active && onHit(25, 1)}
+          className="cursor-pointer dartboard-segment"
         />
         <circle
           cx={cx} cy={cy} r="16"
           fill="#e63946"
-          className="cursor-pointer transition-all duration-100 hover:brightness-125 active:brightness-150"
-          onClick={() => !magnifier.active && onHit(50, 2)}
+          className="cursor-pointer dartboard-segment"
         />
         {nums.map((n, i) => {
           const a = (i * 18 - 90) * Math.PI / 180;
@@ -366,10 +391,10 @@ const Dartboard = ({ onHit, size = 300, numberSize = 14 }) => {
               const even = i % 2 === 0;
               return (
                 <React.Fragment key={n}>
-                  {segment(180, 170, sa, ea, even ? '#e63946' : '#2a9d8f', n, 2)}
-                  {segment(170, 107, sa, ea, even ? '#1a1a1a' : '#f5e6c8', n, 1)}
-                  {segment(107, 99, sa, ea, even ? '#e63946' : '#2a9d8f', n, 3)}
-                  {segment(99, 40, sa, ea, even ? '#1a1a1a' : '#f5e6c8', n, 1)}
+                  {segment(180, 170, sa, ea, even ? '#e63946' : '#2a9d8f', n, 2, false)}
+                  {segment(170, 107, sa, ea, even ? '#1a1a1a' : '#f5e6c8', n, 1, false)}
+                  {segment(107, 99, sa, ea, even ? '#e63946' : '#2a9d8f', n, 3, false)}
+                  {segment(99, 40, sa, ea, even ? '#1a1a1a' : '#f5e6c8', n, 1, false)}
                 </React.Fragment>
               );
             })}
@@ -952,6 +977,50 @@ export default function App() {
       }
     }
   }, [gameActive, darts, currentPlayer, playerStats, sound, haptic, autoAdvance]);
+
+  // Record a complete 3-dart turn at once (for keypad/quick modes)
+  const recordTurn = useCallback((turnScore, isCheckout = false) => {
+    if (!gameActive) return;
+
+    // Create 3 darts representing the turn (for display and undo purposes)
+    const newDarts = [
+      { score: turnScore, label: String(turnScore), isDouble: isCheckout },
+      { score: 0, label: '', isDouble: false },
+      { score: 0, label: '', isDouble: false }
+    ];
+    setDarts(newDarts);
+
+    // Update player stats - count as 3 darts thrown
+    const newStats = [...playerStats];
+    newStats[currentPlayer].darts += 3;
+    newStats[currentPlayer].score += turnScore;
+    newStats[currentPlayer].legDarts += 3;
+    newStats[currentPlayer].legScore += turnScore;
+    // For first 9 darts, add 3 entries (or fewer if we're past 9)
+    const remaining = Math.max(0, 9 - (newStats[currentPlayer].first9.length));
+    if (remaining > 0) {
+      // Distribute the turn score across the first 9 entries
+      const perDart = Math.round(turnScore / 3);
+      for (let i = 0; i < Math.min(3, remaining); i++) {
+        newStats[currentPlayer].first9.push(perDart);
+      }
+    }
+    if (turnScore > newStats[currentPlayer].highTurn) {
+      newStats[currentPlayer].highTurn = turnScore;
+    }
+    setPlayerStats(newStats);
+
+    sound('throw');
+    haptic();
+
+    // Check for high scores
+    checkHighScore(turnScore);
+
+    // Auto-advance after short delay
+    if (autoAdvance) {
+      setTimeout(() => nextTurn(), 500);
+    }
+  }, [gameActive, currentPlayer, playerStats, sound, haptic, autoAdvance, checkHighScore]);
 
   const checkHighScore = useCallback((total) => {
     let newStats = { ...stats };
@@ -1768,12 +1837,7 @@ export default function App() {
                   <Keypad
                     currentScore={scores[currentPlayer] - turnTotal}
                     onSubmit={(score, isCheckout) => {
-                      const dart1 = Math.min(score, 60);
-                      const dart2 = Math.min(Math.max(score - 60, 0), 60);
-                      const dart3 = Math.max(score - 120, 0);
-                      recordDart(dart1, `${score}`, false);
-                      recordDart(dart2, '', false);
-                      recordDart(dart3, '', isCheckout);
+                      recordTurn(score, isCheckout);
                     }}
                   />
                 </div>
@@ -1818,12 +1882,7 @@ export default function App() {
                   <QuickScores
                     currentScore={scores[currentPlayer] - turnTotal}
                     onSubmit={(score, isCheckout) => {
-                      const dart1 = Math.min(score, 60);
-                      const dart2 = Math.min(Math.max(score - 60, 0), 60);
-                      const dart3 = Math.max(score - 120, 0);
-                      recordDart(dart1, `${score}`, false);
-                      recordDart(dart2, '', false);
-                      recordDart(dart3, '', isCheckout);
+                      recordTurn(score, isCheckout);
                     }}
                   />
                 </div>
