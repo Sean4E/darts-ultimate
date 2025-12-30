@@ -11,6 +11,9 @@ const THEMES = {
   forest: { name: 'Forest', primary: '#10B981', secondary: '#06B6D4', bg: '#0A1A14', bgMed: '#0F251C', bgLight: '#183528' },
   neon: { name: 'Neon', primary: '#E11D48', secondary: '#A855F7', bg: '#0A0A0A', bgMed: '#141414', bgLight: '#1F1F1F' },
   midnight: { name: 'Midnight', primary: '#FBBF24', secondary: '#F97316', bg: '#09090B', bgMed: '#18181B', bgLight: '#27272A' },
+  ruby: { name: 'Ruby', primary: '#DC2626', secondary: '#F97316', bg: '#1A0808', bgMed: '#251212', bgLight: '#351818' },
+  emerald: { name: 'Emerald', primary: '#059669', secondary: '#10B981', bg: '#061A14', bgMed: '#0A251C', bgLight: '#123528' },
+  sapphire: { name: 'Sapphire', primary: '#2563EB', secondary: '#3B82F6', bg: '#080A1A', bgMed: '#101525', bgLight: '#182035' },
 };
 
 const BACKGROUNDS = {
@@ -133,7 +136,7 @@ const speak = (text) => {
 // ============ COMPONENTS ============
 
 // Interactive Dartboard SVG
-const Dartboard = ({ onHit, size = 300 }) => {
+const Dartboard = ({ onHit, size = 300, numberSize = 14 }) => {
   const nums = [20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
   const cx = 200, cy = 200;
 
@@ -156,6 +159,9 @@ const Dartboard = ({ onHit, size = 300 }) => {
     );
   };
 
+  // Calculate number position based on size - larger numbers sit further out
+  const numberRadius = 188 + (numberSize - 12) * 0.5;
+
   return (
     <svg viewBox="0 0 400 400" style={{ width: size, height: size, filter: 'drop-shadow(0 10px 40px rgba(0,0,0,0.5))' }}>
       <circle cx={cx} cy={cy} r="180" fill="#1a1a1a" />
@@ -176,9 +182,23 @@ const Dartboard = ({ onHit, size = 300 }) => {
       <circle cx={cx} cy={cy} r="16" fill="#e63946" className="cursor-pointer hover:brightness-125 active:brightness-150" onClick={() => onHit(50, 2)} />
       {nums.map((n, i) => {
         const a = (i * 18 - 90) * Math.PI / 180;
-        const x = cx + Math.cos(a) * 194;
-        const y = cy + Math.sin(a) * 194;
-        return <text key={`num-${n}`} x={x} y={y} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="12" fontWeight="700" style={{ pointerEvents: 'none' }}>{n}</text>;
+        const x = cx + Math.cos(a) * numberRadius;
+        const y = cy + Math.sin(a) * numberRadius;
+        return (
+          <text
+            key={`num-${n}`}
+            x={x}
+            y={y}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fill="white"
+            fontSize={numberSize}
+            fontWeight="700"
+            style={{ pointerEvents: 'none', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}
+          >
+            {n}
+          </text>
+        );
       })}
     </svg>
   );
@@ -235,28 +255,98 @@ const NumberPad = ({ onScore, multiplier, setMultiplier }) => (
 // Quick Score Input
 const QuickScoreInput = ({ onScore }) => {
   const [customValue, setCustomValue] = useState('');
-  const quickScores = [180, 140, 100, 85, 60, 45, 41, 26, 20, 0];
+
+  // Common scores organized by category
+  const highScores = [180, 177, 174, 171, 170, 167, 164, 161, 160];
+  const tonScores = [140, 137, 134, 131, 125, 121, 120, 100];
+  const midScores = [85, 81, 80, 77, 60, 57, 54, 45, 41];
+  const lowScores = [40, 36, 32, 26, 20, 19, 18, 3, 0];
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-5 gap-2">
-        {quickScores.map(score => (
-          <button
-            key={score}
-            onClick={() => onScore(score)}
-            className="h-10 rounded-lg font-mono font-semibold bg-card border border-border hover:bg-primary/30 active:bg-primary transition-colors"
-          >
-            {score}
-          </button>
-        ))}
+      {/* High Scores */}
+      <div>
+        <div className="text-xs text-white/50 mb-1">HIGH SCORES</div>
+        <div className="grid grid-cols-5 gap-1.5">
+          {highScores.map(score => (
+            <button
+              key={score}
+              onClick={() => onScore(score)}
+              className="h-10 rounded-lg font-mono font-semibold bg-gradient-to-br from-[var(--primary)]/30 to-[var(--secondary)]/30 hover:from-[var(--primary)]/50 hover:to-[var(--secondary)]/50 active:from-[var(--primary)] active:to-[var(--secondary)] transition-all"
+            >
+              {score}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="flex gap-2">
+
+      {/* Ton+ Scores */}
+      <div>
+        <div className="text-xs text-white/50 mb-1">TON+</div>
+        <div className="grid grid-cols-4 gap-1.5">
+          {tonScores.map(score => (
+            <button
+              key={score}
+              onClick={() => onScore(score)}
+              className="h-10 rounded-lg font-mono font-semibold bg-white/10 hover:bg-white/20 active:bg-[var(--primary)] transition-colors"
+            >
+              {score}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Mid Scores */}
+      <div>
+        <div className="text-xs text-white/50 mb-1">COMMON</div>
+        <div className="grid grid-cols-5 gap-1.5">
+          {midScores.map(score => (
+            <button
+              key={score}
+              onClick={() => onScore(score)}
+              className="h-10 rounded-lg font-mono font-semibold bg-white/10 hover:bg-white/20 active:bg-[var(--primary)] transition-colors"
+            >
+              {score}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Low Scores */}
+      <div>
+        <div className="text-xs text-white/50 mb-1">LOW / MISS</div>
+        <div className="grid grid-cols-5 gap-1.5">
+          {lowScores.map(score => (
+            <button
+              key={score}
+              onClick={() => onScore(score)}
+              className={`h-10 rounded-lg font-mono font-semibold transition-colors ${
+                score === 0 ? 'bg-red-500/80 hover:bg-red-500 col-span-2' : 'bg-white/10 hover:bg-white/20 active:bg-[var(--primary)]'
+              }`}
+            >
+              {score === 0 ? 'MISS (0)' : score}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Custom Input */}
+      <div className="flex gap-2 pt-2 border-t border-white/10">
         <input
           type="number"
           value={customValue}
           onChange={(e) => setCustomValue(e.target.value)}
-          placeholder="Custom score..."
-          className="flex-1 h-11 px-4 rounded-lg bg-bgLight border border-border font-mono text-center focus:outline-none focus:border-primary"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              const val = parseInt(customValue);
+              if (!isNaN(val) && val >= 0 && val <= 180) {
+                onScore(val);
+                setCustomValue('');
+              }
+            }
+          }}
+          placeholder="Custom (0-180)..."
+          className="flex-1 h-12 px-4 rounded-xl bg-white/10 border border-white/20 font-mono text-center text-lg focus:outline-none focus:border-[var(--primary)]"
           min="0"
           max="180"
         />
@@ -268,9 +358,10 @@ const QuickScoreInput = ({ onScore }) => {
               setCustomValue('');
             }
           }}
-          className="px-6 h-11 rounded-lg font-semibold bg-primary text-white hover:bg-primary/80"
+          className="px-6 h-12 rounded-xl font-bold text-white"
+          style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))` }}
         >
-          Submit
+          OK
         </button>
       </div>
     </div>
@@ -370,6 +461,7 @@ export default function App() {
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [hintsEnabled, setHintsEnabled] = useState(true);
   const [autoAdvance, setAutoAdvance] = useState(true);
+  const [boardNumberSize, setBoardNumberSize] = useState(14); // 10-20 range
 
   // Navigation State
   const [screen, setScreen] = useState('home');
@@ -445,6 +537,7 @@ export default function App() {
         if (data.voiceEnabled !== undefined) setVoiceEnabled(data.voiceEnabled);
         if (data.hintsEnabled !== undefined) setHintsEnabled(data.hintsEnabled);
         if (data.autoAdvance !== undefined) setAutoAdvance(data.autoAdvance);
+        if (data.boardNumberSize !== undefined) setBoardNumberSize(data.boardNumberSize);
         if (data.players) setPlayers(data.players);
         if (data.stats) setStats(s => ({ ...s, ...data.stats }));
         if (data.achievements) setAchievements(a => ({ ...a, ...data.achievements }));
@@ -456,9 +549,9 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem('dartsUltimateV2', JSON.stringify({
-      theme, background, soundEnabled, hapticEnabled, voiceEnabled, hintsEnabled, autoAdvance, players, stats, achievements
+      theme, background, soundEnabled, hapticEnabled, voiceEnabled, hintsEnabled, autoAdvance, boardNumberSize, players, stats, achievements
     }));
-  }, [theme, background, soundEnabled, hapticEnabled, voiceEnabled, hintsEnabled, autoAdvance, players, stats, achievements]);
+  }, [theme, background, soundEnabled, hapticEnabled, voiceEnabled, hintsEnabled, autoAdvance, boardNumberSize, players, stats, achievements]);
 
   // Theme CSS Variables
   useEffect(() => {
@@ -1064,21 +1157,87 @@ export default function App() {
 
             {/* Format */}
             <Card title="🎲 Format">
-              <div className="text-xs text-white/60 mb-2">LEGS</div>
-              <div className="grid grid-cols-4 gap-2 mb-3">
-                {[1, 3, 5, 7].map(n => (
-                  <SelectButton key={n} selected={legs === n && sets === 0} onClick={() => { setLegs(n); setSets(0); }}>
-                    {n === 1 ? '1 Leg' : `Bo${n}`}
-                  </SelectButton>
-                ))}
+              {/* Legs Selection */}
+              <div className="text-xs text-white/60 mb-2">LEGS (First to win)</div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="grid grid-cols-4 gap-2 flex-1">
+                  {[1, 3, 5, 7].map(n => (
+                    <SelectButton key={n} selected={legs === n && sets === 0} onClick={() => { setLegs(n); setSets(0); }}>
+                      {n}
+                    </SelectButton>
+                  ))}
+                </div>
+                <div className="flex items-center gap-1 bg-white/10 rounded-xl px-2 py-1">
+                  <button
+                    onClick={() => { if (legs > 1) { setLegs(legs - 1); setSets(0); } }}
+                    className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    value={sets === 0 ? legs : ''}
+                    onChange={(e) => { const v = parseInt(e.target.value) || 1; setLegs(Math.max(1, Math.min(21, v))); setSets(0); }}
+                    className="w-12 h-8 bg-transparent text-center font-mono font-bold text-lg focus:outline-none"
+                    min="1"
+                    max="21"
+                  />
+                  <button
+                    onClick={() => { if (legs < 21) { setLegs(legs + 1); setSets(0); } }}
+                    className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
-              <div className="text-xs text-white/60 mb-2">SETS</div>
-              <div className="grid grid-cols-3 gap-2">
-                {[3, 5, 7].map(n => (
-                  <SelectButton key={n} selected={sets === n} onClick={() => { setSets(n); setLegs(3); }}>
-                    {n} Sets
+
+              {/* Sets Selection */}
+              <div className="text-xs text-white/60 mb-2">SETS (First to win) <span className="opacity-50">- Optional</span></div>
+              <div className="flex items-center gap-2">
+                <div className="grid grid-cols-4 gap-2 flex-1">
+                  <SelectButton selected={sets === 0} onClick={() => setSets(0)}>
+                    None
                   </SelectButton>
-                ))}
+                  {[3, 5, 7].map(n => (
+                    <SelectButton key={n} selected={sets === n} onClick={() => { setSets(n); if (legs < 3) setLegs(3); }}>
+                      {n}
+                    </SelectButton>
+                  ))}
+                </div>
+                <div className="flex items-center gap-1 bg-white/10 rounded-xl px-2 py-1">
+                  <button
+                    onClick={() => { if (sets > 0) setSets(sets - 1); }}
+                    className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    value={sets}
+                    onChange={(e) => { const v = parseInt(e.target.value) || 0; setSets(Math.max(0, Math.min(13, v))); if (v > 0 && legs < 3) setLegs(3); }}
+                    className="w-12 h-8 bg-transparent text-center font-mono font-bold text-lg focus:outline-none"
+                    min="0"
+                    max="13"
+                  />
+                  <button
+                    onClick={() => { if (sets < 13) { setSets(sets + 1); if (legs < 3) setLegs(3); } }}
+                    className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Format Summary */}
+              <div className="mt-3 p-3 bg-gradient-to-r from-[var(--primary)]/20 to-[var(--secondary)]/20 rounded-xl text-center border border-[var(--primary)]/30">
+                <span className="font-semibold">
+                  {sets > 0
+                    ? `First to ${Math.ceil(sets / 2)} sets (Best of ${legs} legs per set)`
+                    : legs === 1
+                      ? 'Single leg match'
+                      : `First to ${Math.ceil(legs / 2)} legs (Best of ${legs})`
+                  }
+                </span>
               </div>
             </Card>
 
@@ -1172,6 +1331,29 @@ export default function App() {
               <X size={20} />
             </button>
 
+            {/* Input Mode Tabs */}
+            <div className="flex justify-center gap-1 px-4 py-2 bg-bgMed/50">
+              {[
+                { id: 'board', icon: '🎯', label: 'Board' },
+                { id: 'pad', icon: '🔢', label: 'Pad' },
+                { id: 'quick', icon: '⚡', label: 'Quick' },
+              ].map(mode => (
+                <button
+                  key={mode.id}
+                  onClick={() => { setInputMode(mode.id); haptic(); }}
+                  className={`flex-1 max-w-[100px] py-2 px-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-1 ${
+                    inputMode === mode.id
+                      ? 'text-white shadow-lg'
+                      : 'bg-white/10 text-white/60 hover:bg-white/20'
+                  }`}
+                  style={inputMode === mode.id ? { background: `linear-gradient(135deg, var(--primary), var(--secondary))` } : {}}
+                >
+                  <span>{mode.icon}</span>
+                  <span className="hidden sm:inline">{mode.label}</span>
+                </button>
+              ))}
+            </div>
+
             {/* Checkout Hint */}
             {checkout && (
               <div className="py-2 px-4 text-center" style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))` }}>
@@ -1180,46 +1362,86 @@ export default function App() {
               </div>
             )}
 
-            {/* Board Area */}
-            <div className="flex-1 flex items-center justify-center p-2 relative min-h-0">
-              {/* Darts thrown overlay */}
-              <div className="absolute top-2 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/70 backdrop-blur rounded-full px-3 py-1.5 z-10">
-                {[0, 1, 2].map(i => (
-                  <div
-                    key={i}
-                    className={`min-w-[44px] h-8 rounded-full flex items-center justify-center font-mono text-sm font-bold ${
-                      darts[i] ? '' : 'bg-white/10'
-                    }`}
-                    style={darts[i] ? { background: `linear-gradient(135deg, var(--primary), var(--secondary))` } : {}}
-                  >
-                    {darts[i]?.label || '-'}
-                  </div>
-                ))}
+            {/* Darts thrown display */}
+            <div className="flex justify-center gap-1.5 py-2 px-4">
+              {[0, 1, 2].map(i => (
                 <div
-                  className="min-w-[54px] h-8 rounded-full flex items-center justify-center font-mono font-bold"
-                  style={{ background: 'var(--primary)' }}
+                  key={i}
+                  className={`min-w-[52px] h-9 rounded-xl flex items-center justify-center font-mono text-sm font-bold transition-all ${
+                    darts[i] ? '' : 'bg-white/10'
+                  }`}
+                  style={darts[i] ? { background: `linear-gradient(135deg, var(--primary), var(--secondary))` } : {}}
                 >
-                  {turnTotal}
+                  {darts[i]?.label || '-'}
                 </div>
+              ))}
+              <div
+                className="min-w-[60px] h-9 rounded-xl flex items-center justify-center font-mono font-bold text-lg"
+                style={{ background: 'var(--primary)' }}
+              >
+                {turnTotal}
               </div>
-
-              <Dartboard
-                onHit={(n, mult) => {
-                  let score, label, isDouble;
-                  if (n === 50) {
-                    score = 50; label = 'Bull'; isDouble = true;
-                  } else if (n === 25) {
-                    score = 25; label = '25'; isDouble = false;
-                  } else {
-                    score = n * mult;
-                    label = mult === 1 ? `S${n}` : mult === 2 ? `D${n}` : `T${n}`;
-                    isDouble = mult === 2;
-                  }
-                  recordDart(score, label, isDouble);
-                }}
-                size={Math.min(window.innerWidth - 16, window.innerHeight - 300)}
-              />
             </div>
+
+            {/* Input Area - Board Mode */}
+            {inputMode === 'board' && (
+              <div className="flex-1 flex items-center justify-center p-2 relative min-h-0">
+                <Dartboard
+                  onHit={(n, mult) => {
+                    let score, label, isDouble;
+                    if (n === 50) {
+                      score = 50; label = 'Bull'; isDouble = true;
+                    } else if (n === 25) {
+                      score = 25; label = '25'; isDouble = false;
+                    } else {
+                      score = n * mult;
+                      label = mult === 1 ? `S${n}` : mult === 2 ? `D${n}` : `T${n}`;
+                      isDouble = mult === 2;
+                    }
+                    recordDart(score, label, isDouble);
+                  }}
+                  size={Math.min(window.innerWidth - 16, window.innerHeight - 380)}
+                  numberSize={boardNumberSize}
+                />
+              </div>
+            )}
+
+            {/* Input Area - Pad Mode */}
+            {inputMode === 'pad' && (
+              <div className="flex-1 overflow-y-auto p-3">
+                <NumberPad
+                  onScore={(score, label, isDouble) => recordDart(score, label, isDouble)}
+                  multiplier={multiplier}
+                  setMultiplier={setMultiplier}
+                />
+              </div>
+            )}
+
+            {/* Input Area - Quick Mode */}
+            {inputMode === 'quick' && (
+              <div className="flex-1 overflow-y-auto p-3">
+                <QuickScoreInput
+                  onScore={(score) => {
+                    // Quick mode enters full turn score directly
+                    if (darts.length === 0) {
+                      // For checkout detection: if score matches remaining and <= 170, assume it's a checkout
+                      const isCheckout = score === scores[currentPlayer] && score <= 170 && score >= 2;
+
+                      // Split score across 3 "virtual" darts for stats
+                      const dart1 = Math.min(score, 60);
+                      const dart2 = Math.min(Math.max(score - 60, 0), 60);
+                      const dart3 = Math.max(score - 120, 0);
+
+                      // Record the darts (label shows total for first dart)
+                      recordDart(dart1, `${score}`, false);
+                      recordDart(dart2, '', false);
+                      // Last dart is "double" if this is a checkout
+                      recordDart(dart3, '', isCheckout);
+                    }
+                  }}
+                />
+              </div>
+            )}
 
             {/* Stats Bar */}
             <div className="flex justify-center gap-6 py-2 bg-white/5 text-xs">
@@ -1518,6 +1740,35 @@ export default function App() {
                   <span className="text-xs font-semibold text-white/90">{t.name}</span>
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Dartboard Number Size Slider */}
+          <div>
+            <div className="text-xs text-white/50 mb-2 uppercase flex items-center justify-between">
+              <span>Board Number Size</span>
+              <span className="text-[var(--primary)] font-mono">{boardNumberSize}px</span>
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+              <span className="text-xs opacity-50">Small</span>
+              <input
+                type="range"
+                min="10"
+                max="20"
+                value={boardNumberSize}
+                onChange={(e) => setBoardNumberSize(parseInt(e.target.value))}
+                className="flex-1 h-2 rounded-full appearance-none bg-white/20 cursor-pointer"
+                style={{
+                  background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${(boardNumberSize - 10) * 10}%, rgba(255,255,255,0.2) ${(boardNumberSize - 10) * 10}%, rgba(255,255,255,0.2) 100%)`
+                }}
+              />
+              <span className="text-xs opacity-50">Large</span>
+            </div>
+            <div className="mt-2 flex justify-center">
+              <div className="bg-white/10 rounded-xl p-3 text-center">
+                <span style={{ fontSize: boardNumberSize }} className="font-bold">20</span>
+                <span className="text-xs opacity-50 ml-2">Preview</span>
+              </div>
             </div>
           </div>
 
