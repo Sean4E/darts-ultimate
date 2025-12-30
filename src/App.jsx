@@ -1007,49 +1007,105 @@ export default function App() {
     setAchievements(newAchievements);
   }, [stats, achievements, announce, celebrate, showToast]);
 
-  // Record a complete 3-dart turn at once (for keypad/quick modes)
-  const recordTurn = useCallback((turnScore, isCheckout = false) => {
+  // Submit a complete 3-dart turn at once (for keypad/quick modes)
+  // This processes the turn immediately without using the darts array
+  const submitTurn = useCallback((turnScore, isCheckout = false) => {
     if (!gameActive) return;
 
-    // Create 3 darts representing the turn (for display and undo purposes)
-    const newDarts = [
-      { score: turnScore, label: String(turnScore), isDouble: isCheckout },
-      { score: 0, label: '', isDouble: false },
-      { score: 0, label: '', isDouble: false }
-    ];
-    setDarts(newDarts);
+    // Save to undo history
+    setUndoHistory(h => [...h.slice(-19), {
+      player: currentPlayer,
+      darts: [],
+      turnTotal: turnScore,
+      scoreBefore: scores[currentPlayer],
+      statsBefore: { ...playerStats[currentPlayer] }
+    }]);
 
-    // Update player stats - count as 3 darts thrown
+    // Check for checkout attempt
+    if (scores[currentPlayer] <= 170 && CHECKOUTS[scores[currentPlayer]]) {
+      setStats(s => ({ ...s, checkAttempts: s.checkAttempts + 1 }));
+    }
+
+    const newScore = scores[currentPlayer] - turnScore;
+
+    // Bust check
+    if (newScore < 0 || newScore === 1 || (checkoutMode === 'double' && newScore === 0 && !isCheckout)) {
+      showToast('BUST! 💥', 'error');
+      sound('bust', 0.15);
+      // Score doesn't change on bust, but stats still updated
+    } else if (newScore === 0) {
+      // Checkout!
+      setStats(s => ({ ...s, checkHits: s.checkHits + 1 }));
+      if (turnScore >= 100) {
+        setAchievements(a => ({ ...a, checkout100: true }));
+      }
+
+      // Update scores first
+      const newScores = [...scores];
+      newScores[currentPlayer] = 0;
+      setScores(newScores);
+
+      // Update player stats
+      const newStats = [...playerStats];
+      newStats[currentPlayer].darts += 3;
+      newStats[currentPlayer].score += turnScore;
+      newStats[currentPlayer].legDarts += 3;
+      newStats[currentPlayer].legScore += turnScore;
+      newStats[currentPlayer].checkHits++;
+      if (turnScore > newStats[currentPlayer].highTurn) {
+        newStats[currentPlayer].highTurn = turnScore;
+      }
+      const remaining = Math.max(0, 9 - newStats[currentPlayer].first9.length);
+      if (remaining > 0) {
+        const perDart = Math.round(turnScore / 3);
+        for (let i = 0; i < Math.min(3, remaining); i++) {
+          newStats[currentPlayer].first9.push(perDart);
+        }
+      }
+      setPlayerStats(newStats);
+
+      // Check high score and leg won
+      checkHighScore(turnScore);
+      legWon(currentPlayer);
+      return;
+    } else {
+      // Normal turn - update score
+      const newScores = [...scores];
+      newScores[currentPlayer] = newScore;
+      setScores(newScores);
+    }
+
+    // Update player stats
     const newStats = [...playerStats];
     newStats[currentPlayer].darts += 3;
     newStats[currentPlayer].score += turnScore;
     newStats[currentPlayer].legDarts += 3;
     newStats[currentPlayer].legScore += turnScore;
-    // For first 9 darts, add 3 entries (or fewer if we're past 9)
-    const remaining = Math.max(0, 9 - (newStats[currentPlayer].first9.length));
+    if (turnScore > newStats[currentPlayer].highTurn) {
+      newStats[currentPlayer].highTurn = turnScore;
+    }
+    const remaining = Math.max(0, 9 - newStats[currentPlayer].first9.length);
     if (remaining > 0) {
-      // Distribute the turn score across the first 9 entries
       const perDart = Math.round(turnScore / 3);
       for (let i = 0; i < Math.min(3, remaining); i++) {
         newStats[currentPlayer].first9.push(perDart);
       }
     }
-    if (turnScore > newStats[currentPlayer].highTurn) {
-      newStats[currentPlayer].highTurn = turnScore;
-    }
     setPlayerStats(newStats);
 
+    // Check high score
+    checkHighScore(turnScore);
+
+    // Play sound and haptic
     sound('throw');
     haptic();
 
-    // Check for high scores
-    checkHighScore(turnScore);
-
-    // Auto-advance after short delay
-    if (autoAdvance) {
-      setTimeout(() => nextTurn(), 500);
-    }
-  }, [gameActive, currentPlayer, playerStats, sound, haptic, autoAdvance, checkHighScore]);
+    // Advance to next player
+    setCurrentPlayer((currentPlayer + 1) % numPlayers);
+    setDarts([]);
+    setMultiplier(1);
+    sound('next');
+  }, [gameActive, currentPlayer, scores, playerStats, checkoutMode, numPlayers, showToast, sound, haptic, checkHighScore, legWon]);
 
   const nextTurn = useCallback(() => {
     if (!gameActive) return;
@@ -1835,20 +1891,21 @@ export default function App() {
               <div className="flex-1 flex flex-col min-h-0">
                 <div className="flex-1 overflow-y-auto p-3">
                   <Keypad
-                    currentScore={scores[currentPlayer] - turnTotal}
+                    currentScore={scores[currentPlayer]}
                     onSubmit={(score, isCheckout) => {
-                      recordTurn(score, isCheckout);
+                      submitTurn(score, isCheckout);
                     }}
                   />
                 </div>
-                {/* Stats + Actions */}
-                <div className="flex items-center gap-2 p-2 bg-bgMed safe-bottom">
-                  <div className="flex gap-3 text-xs flex-1">
-                    <div><span className="opacity-50">Avg:</span> <span className="font-mono font-bold">{playerStats[currentPlayer]?.darts > 0 ? (playerStats[currentPlayer].score / playerStats[currentPlayer].darts * 3).toFixed(1) : '0.0'}</span></div>
+                {/* Stats Bar */}
+                <div className="flex items-center justify-between p-3 bg-bgMed safe-bottom">
+                  <div className="flex gap-4 text-sm">
+                    <div><span className="opacity-50">Avg:</span> <span className="font-mono font-bold text-[var(--primary)]">{playerStats[currentPlayer]?.darts > 0 ? (playerStats[currentPlayer].score / playerStats[currentPlayer].darts * 3).toFixed(1) : '0.0'}</span></div>
                     <div><span className="opacity-50">Darts:</span> <span className="font-mono font-bold">{playerStats[currentPlayer]?.legDarts || 0}</span></div>
                   </div>
-                  <button onClick={undoAction} className="py-2.5 px-4 rounded-xl font-bold bg-white/10 active:scale-95"><RotateCcw size={16} /></button>
-                  <button onClick={nextTurn} className="py-2.5 px-6 rounded-xl font-bold text-white active:scale-95" style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))` }}>Next</button>
+                  <button onClick={undoAction} className="py-2 px-4 rounded-xl font-semibold bg-white/10 flex items-center gap-2 active:scale-95 transition-transform">
+                    <RotateCcw size={16} /> Undo
+                  </button>
                 </div>
               </div>
             )}
@@ -1863,14 +1920,17 @@ export default function App() {
                     setMultiplier={setMultiplier}
                   />
                 </div>
-                {/* Stats + Actions */}
-                <div className="flex items-center gap-2 p-2 bg-bgMed safe-bottom">
-                  <div className="flex gap-3 text-xs flex-1">
-                    <div><span className="opacity-50">Avg:</span> <span className="font-mono font-bold">{playerStats[currentPlayer]?.darts > 0 ? (playerStats[currentPlayer].score / playerStats[currentPlayer].darts * 3).toFixed(1) : '0.0'}</span></div>
-                    <div><span className="opacity-50">Darts:</span> <span className="font-mono font-bold">{playerStats[currentPlayer]?.legDarts || 0}</span></div>
+                {/* Actions Bar */}
+                <div className="flex gap-2 p-2 bg-bgMed safe-bottom">
+                  <div className="flex gap-3 text-sm items-center flex-1">
+                    <div><span className="opacity-50">Avg:</span> <span className="font-mono font-bold text-[var(--primary)]">{playerStats[currentPlayer]?.darts > 0 ? (playerStats[currentPlayer].score / playerStats[currentPlayer].darts * 3).toFixed(1) : '0.0'}</span></div>
                   </div>
-                  <button onClick={undoAction} className="py-2.5 px-4 rounded-xl font-bold bg-white/10 active:scale-95"><RotateCcw size={16} /></button>
-                  <button onClick={nextTurn} className="py-2.5 px-6 rounded-xl font-bold text-white active:scale-95" style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))` }}>Next</button>
+                  <button onClick={undoAction} className="py-2.5 px-4 rounded-xl font-semibold bg-white/10 flex items-center gap-1 active:scale-95 transition-transform">
+                    <RotateCcw size={16} /> Undo
+                  </button>
+                  <button onClick={nextTurn} className="py-2.5 px-6 rounded-xl font-bold text-white flex items-center gap-1 active:scale-95 transition-transform" style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))` }}>
+                    Next <ChevronRight size={16} />
+                  </button>
                 </div>
               </div>
             )}
@@ -1880,20 +1940,21 @@ export default function App() {
               <div className="flex-1 flex flex-col min-h-0">
                 <div className="flex-1 overflow-y-auto p-3">
                   <QuickScores
-                    currentScore={scores[currentPlayer] - turnTotal}
+                    currentScore={scores[currentPlayer]}
                     onSubmit={(score, isCheckout) => {
-                      recordTurn(score, isCheckout);
+                      submitTurn(score, isCheckout);
                     }}
                   />
                 </div>
-                {/* Stats + Actions */}
-                <div className="flex items-center gap-2 p-2 bg-bgMed safe-bottom">
-                  <div className="flex gap-3 text-xs flex-1">
-                    <div><span className="opacity-50">Avg:</span> <span className="font-mono font-bold">{playerStats[currentPlayer]?.darts > 0 ? (playerStats[currentPlayer].score / playerStats[currentPlayer].darts * 3).toFixed(1) : '0.0'}</span></div>
+                {/* Stats Bar */}
+                <div className="flex items-center justify-between p-3 bg-bgMed safe-bottom">
+                  <div className="flex gap-4 text-sm">
+                    <div><span className="opacity-50">Avg:</span> <span className="font-mono font-bold text-[var(--primary)]">{playerStats[currentPlayer]?.darts > 0 ? (playerStats[currentPlayer].score / playerStats[currentPlayer].darts * 3).toFixed(1) : '0.0'}</span></div>
                     <div><span className="opacity-50">Darts:</span> <span className="font-mono font-bold">{playerStats[currentPlayer]?.legDarts || 0}</span></div>
                   </div>
-                  <button onClick={undoAction} className="py-2.5 px-4 rounded-xl font-bold bg-white/10 active:scale-95"><RotateCcw size={16} /></button>
-                  <button onClick={nextTurn} className="py-2.5 px-6 rounded-xl font-bold text-white active:scale-95" style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))` }}>Next</button>
+                  <button onClick={undoAction} className="py-2 px-4 rounded-xl font-semibold bg-white/10 flex items-center gap-2 active:scale-95 transition-transform">
+                    <RotateCcw size={16} /> Undo
+                  </button>
                 </div>
               </div>
             )}
