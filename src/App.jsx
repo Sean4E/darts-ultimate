@@ -1,95 +1,138 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Home, Target, Dumbbell, BookOpen, BarChart3, Settings, HelpCircle, X, ChevronRight, RotateCcw, Trophy, Zap, Volume2, VolumeX, Sun, Moon, Palette } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Home, Target, Dumbbell, BookOpen, BarChart3, Settings, X, ChevronRight, RotateCcw, Share2, Volume2, VolumeX, Vibrate, MessageSquare, Lightbulb, Clock, HelpCircle } from 'lucide-react';
 
 // ============ CONSTANTS ============
 const CHECKOUTS = {170:'T20 T20 Bull',167:'T20 T19 Bull',164:'T20 T18 Bull',161:'T20 T17 Bull',160:'T20 T20 D20',158:'T20 T20 D19',157:'T20 T19 D20',156:'T20 T20 D18',155:'T20 T19 D19',154:'T20 T18 D20',152:'T20 T20 D16',151:'T20 T17 D20',150:'T20 T18 D18',148:'T20 T20 D14',146:'T20 T18 D16',144:'T20 T20 D12',142:'T20 T14 D20',140:'T20 T20 D10',138:'T20 T18 D12',136:'T20 T20 D8',134:'T20 T14 D16',132:'T20 T16 D12',130:'T20 T20 D5',128:'T18 T14 D16',127:'T20 T17 D8',126:'T19 T19 D6',125:'T20 T19 D4',124:'T20 T16 D8',123:'T19 T16 D9',122:'T18 T18 D7',121:'T20 T11 D14',120:'T20 S20 D20',119:'T19 T12 D13',118:'T20 S18 D20',117:'T20 S17 D20',116:'T20 S16 D20',115:'T20 S15 D20',114:'T20 S14 D20',113:'T20 S13 D20',112:'T20 T12 D8',111:'T20 S19 D16',110:'T20 S10 D20',109:'T20 S9 D20',108:'T20 S16 D16',107:'T19 S10 D20',106:'T20 S6 D20',105:'T20 S5 D20',104:'T18 S10 D20',103:'T19 S6 D20',102:'T20 S10 D16',101:'T17 S10 D20',100:'T20 D20',99:'T19 S10 D16',98:'T20 D19',97:'T19 D20',96:'T20 D18',95:'T19 D19',94:'T18 D20',93:'T19 D18',92:'T20 D16',91:'T17 D20',90:'T18 D18',89:'T19 D16',88:'T20 D14',87:'T17 D18',86:'T18 D16',85:'T19 D14',84:'T20 D12',83:'T17 D16',82:'T14 D20',81:'T19 D12',80:'T20 D10',79:'T13 D20',78:'T18 D12',77:'T19 D10',76:'T20 D8',75:'T17 D12',74:'T14 D16',73:'T19 D8',72:'T16 D12',71:'T13 D16',70:'T18 D8',69:'T19 D6',68:'T20 D4',67:'T17 D8',66:'T10 D18',65:'T19 D4',64:'T16 D8',63:'T13 D12',62:'T10 D16',61:'T15 D8',60:'S20 D20',59:'S19 D20',58:'S18 D20',57:'S17 D20',56:'T16 D4',55:'S15 D20',54:'S14 D20',53:'S13 D20',52:'T12 D8',51:'S11 D20',50:'S10 D20',49:'S9 D20',48:'S16 D16',47:'S15 D16',46:'S6 D20',45:'S13 D16',44:'S12 D16',43:'S11 D16',42:'S10 D16',41:'S9 D16',40:'D20',39:'S7 D16',38:'D19',37:'S5 D16',36:'D18',35:'S3 D16',34:'D17',33:'S1 D16',32:'D16',31:'S15 D8',30:'D15',29:'S13 D8',28:'D14',27:'S11 D8',26:'D13',25:'S9 D8',24:'D12',23:'S7 D8',22:'D11',21:'S5 D8',20:'D10',19:'S3 D8',18:'D9',17:'S1 D8',16:'D8',15:'S7 D4',14:'D7',13:'S5 D4',12:'D6',11:'S3 D4',10:'D5',9:'S1 D4',8:'D4',7:'S3 D2',6:'D3',5:'S1 D2',4:'D2',3:'S1 D1',2:'D1'};
 
 const THEMES = {
-  purple: { name: 'Purple', primary: 'purple-500', gradient: 'from-purple-500 to-indigo-600' },
-  blue: { name: 'Ocean', primary: 'blue-500', gradient: 'from-blue-500 to-cyan-500' },
-  emerald: { name: 'Forest', primary: 'emerald-500', gradient: 'from-emerald-500 to-teal-500' },
-  orange: { name: 'Sunset', primary: 'orange-500', gradient: 'from-orange-500 to-red-500' },
-  rose: { name: 'Rose', primary: 'rose-500', gradient: 'from-rose-500 to-pink-500' },
-  amber: { name: 'Gold', primary: 'amber-500', gradient: 'from-amber-500 to-yellow-500' },
-  cyan: { name: 'Aqua', primary: 'cyan-500', gradient: 'from-cyan-500 to-blue-500' },
-  lime: { name: 'Lime', primary: 'lime-500', gradient: 'from-lime-500 to-green-500' },
-  fuchsia: { name: 'Neon', primary: 'fuchsia-500', gradient: 'from-fuchsia-500 to-purple-500' },
-  slate: { name: 'Slate', primary: 'slate-400', gradient: 'from-slate-400 to-slate-600' },
+  cosmic: { name: 'Cosmic', primary: '#8B5CF6', secondary: '#EC4899', bg: '#0F0A1A', bgMed: '#1A1225', bgLight: '#251A35' },
+  ocean: { name: 'Ocean', primary: '#0EA5E9', secondary: '#06B6D4', bg: '#0A1628', bgMed: '#0F1E32', bgLight: '#162844' },
+  sunset: { name: 'Sunset', primary: '#F97316', secondary: '#EF4444', bg: '#1A0F0A', bgMed: '#251510', bgLight: '#351F18' },
+  forest: { name: 'Forest', primary: '#10B981', secondary: '#06B6D4', bg: '#0A1A14', bgMed: '#0F251C', bgLight: '#183528' },
+  neon: { name: 'Neon', primary: '#E11D48', secondary: '#A855F7', bg: '#0A0A0A', bgMed: '#141414', bgLight: '#1F1F1F' },
+  midnight: { name: 'Midnight', primary: '#FBBF24', secondary: '#F97316', bg: '#09090B', bgMed: '#18181B', bgLight: '#27272A' },
 };
 
 const BACKGROUNDS = {
-  dark: { name: 'Dark', bg: 'bg-slate-900', text: 'text-white', card: 'bg-slate-800/50' },
-  light: { name: 'Light', bg: 'bg-gray-100', text: 'text-gray-900', card: 'bg-white/80' },
-  gradient: { name: 'Gradient', bg: 'bg-gradient-to-br', text: 'text-white', card: 'bg-white/10' },
+  dark: { name: 'Dark', class: 'bg-dark' },
+  light: { name: 'Light', class: 'bg-light' },
+  gradient: { name: 'Gradient', class: 'bg-gradient' },
 };
 
-const AVATARS = ['🎯','🔥','⚡','💎','🏆','👑','🦊','🐺','🦁','🎮','🌟','🚀'];
-const COLORS = ['#8b5cf6','#3b82f6','#10b981','#f97316','#ec4899','#eab308','#06b6d4','#84cc16'];
+const AVATARS = ['😎','🎯','🔥','⚡','🎮','👑','🦊','🐺','🦁','🐯','🦅','🐲','💎','🌟','🎪','🎭','🏆','💪','🎲','🍀'];
+const COLORS = ['#8B5CF6','#EC4899','#06B6D4','#F59E0B','#10B981','#EF4444','#3B82F6','#F472B6','#84CC16','#14B8A6'];
 
-const GAME_MODES = [
-  { id: '501', name: '501', icon: '5️⃣', desc: 'Classic game' },
-  { id: '301', name: '301', icon: '3️⃣', desc: 'Quick game' },
-  { id: '701', name: '701', icon: '7️⃣', desc: 'Long game' },
+const TIPS = [
+  { title: 'Master the Trebles', text: 'Focus on T20-T19-T18 corridor for max efficiency.' },
+  { title: 'Consistent Grouping', text: 'Tight groups anywhere beat scattered high shots.' },
+  { title: 'Leave Even Numbers', text: 'Best finishes: 40 (D20), 32 (D16), 36 (D18).' },
+  { title: 'Cover Shots', text: 'Aim slightly left of T20 to avoid S1/S5.' },
+  { title: 'Doubles Practice', text: 'Spend 50% of practice time on doubles.' },
+  { title: 'Bogey Numbers', text: 'Avoid leaving 169, 168, 166, 165, 163, 162, 159.' },
+  { title: 'Pressure Doubles', text: 'D16 is the most forgiving - D8 if you miss.' },
+  { title: 'Warm Up Right', text: 'Start with 20s, then doubles, then checkouts.' },
 ];
+
+const ACHIEVEMENTS = {
+  first180: { icon: '💎', name: 'First 180', desc: 'Hit your first maximum' },
+  ton80: { icon: '🔥', name: 'Ton-80', desc: 'Score 160+ in a turn' },
+  checkout100: { icon: '🎯', name: '100+ Out', desc: 'Checkout 100 or more' },
+  games10: { icon: '🎮', name: '10 Games', desc: 'Play 10 matches' },
+  avg80: { icon: '📈', name: '80+ Avg', desc: 'Average 80+ in a match' },
+  nineDarter: { icon: '⭐', name: '9 Darter', desc: 'Perfect leg in 9 darts' },
+};
+
+const GUIDES = {
+  stance: {
+    title: 'Stance & Grip',
+    icon: '🧍',
+    content: [
+      { h: 'Distance', p: 'Stand 7ft 9.25in (2.37m) from the board face.' },
+      { h: 'Stance', p: 'Dominant foot forward, body sideways to the board. Keep your back foot grounded for balance.' },
+      { h: 'Grip', p: 'Use 3-4 fingers, firm but relaxed. Find a grip that feels natural and repeatable.' },
+      { h: 'Elbow', p: 'Keep your elbow at 90° pointing directly at your target.' },
+    ]
+  },
+  strategy: {
+    title: 'Scoring Strategy',
+    icon: '🧠',
+    content: [
+      { h: 'Opening', p: 'Always aim for T20 first. Only switch to T19 if you\'re consistently missing left.' },
+      { h: 'Setup Shots', p: 'Leave yourself on even numbers. Best finishes are 40, 32, and 36.' },
+      { h: 'Bogey Numbers', p: 'Avoid 169, 168, 166, 165, 163, 162, 159 - they have no 3-dart checkout.' },
+      { h: 'Risk vs Safe', p: 'When ahead, play safe. When behind, take risks on big scores.' },
+    ]
+  },
+  mental: {
+    title: 'Mental Game',
+    icon: '💭',
+    content: [
+      { h: 'Routine', p: 'Develop and stick to the same approach for every throw.' },
+      { h: 'Focus', p: 'Concentrate on one dart at a time. Forget bad darts immediately.' },
+      { h: 'Pressure', p: 'Slow your breathing and maintain normal timing under pressure.' },
+      { h: 'Visualization', p: 'See the dart hitting the target before you throw.' },
+    ]
+  },
+};
 
 const PRACTICE_MODES = [
-  { id: 'doubles', name: 'Doubles Master', icon: '🎯', desc: 'Hit all doubles D1-D20' },
-  { id: 'bob27', name: "Bob's 27", icon: '👁️', desc: 'Classic doubles drill, start at 27' },
-  { id: 'around', name: 'Around the Clock', icon: '🔄', desc: 'Hit 1-20 in sequence' },
-  { id: 'triples', name: 'Triple Grind', icon: '🔥', desc: 'T20, T19, T18 practice' },
-  { id: 'checkout', name: 'Checkout Drill', icon: '🏁', desc: 'Practice finishing combos' },
-  { id: 'random', name: 'Random Targets', icon: '🎲', desc: 'Test overall accuracy' },
+  { id: 'doubles', name: 'Doubles Master', icon: '🎯', desc: 'Hit all doubles D1-D20', targets: 20 },
+  { id: 'bob27', name: "Bob's 27", icon: '👁️', desc: 'Classic drill - start at 27 points', targets: 20 },
+  { id: 'around', name: 'Around the Clock', icon: '🔄', desc: 'Hit 1-20 in sequence', targets: 20 },
+  { id: 'triples', name: 'Triple Threat', icon: '🔥', desc: 'Master T20, T19, T18, T17', targets: 6 },
+  { id: 'checkout', name: 'Checkout Drill', icon: '🏆', desc: 'Practice common finishes', targets: 10 },
+  { id: 'random', name: 'Random Targets', icon: '🎲', desc: 'Test overall accuracy', targets: 15 },
 ];
 
-const INSTRUCTIONS = {
-  '501': { title: '501', rules: ['Start at 501 points', 'Subtract your score each turn', 'Must finish on exactly 0', 'Final dart must be a double'], tips: ['Leave even numbers for easier doubles', 'T20, T19, T18 for high scoring', 'Avoid leaving 169, 168, 166, 165, 163, 162, 159'] },
-  '301': { title: '301', rules: ['Same as 501 but starting at 301', 'Faster games', 'Must finish on a double'], tips: ['Good for practice', 'Focus on accuracy over power'] },
-  '701': { title: '701', rules: ['Extended version starting at 701', 'Longer format', 'Must finish on a double'], tips: ['Pace yourself', 'Build rhythm'] },
-  'doubles': { title: 'Doubles Master', rules: ['Hit doubles D1 through D20', '3 darts per target', 'Track your hit percentage'], tips: ['Start with D20, D16, D8', 'These are most common checkouts'] },
-  'bob27': { title: "Bob's 27", rules: ['Start with 27 points', 'Hit the double to add its value', 'Miss to subtract its value', 'Try to end positive'], tips: ['Classic pro training drill', 'Tests consistency under pressure'] },
-  'around': { title: 'Around the Clock', rules: ['Hit numbers 1-20 in order', 'Any segment counts (S, D, or T)', 'Track how many darts it takes'], tips: ['Focus on rhythm', 'Great warm-up drill'] },
-};
-
 // ============ UTILITIES ============
-const playSound = (type) => {
+const playSound = (type, volume = 0.08) => {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
     gain.connect(ctx.destination);
-    gain.gain.value = 0.08;
+    gain.gain.value = volume;
 
     const sounds = {
       throw: { freq: 800, dur: 0.04 },
       hit: { freq: 1200, dur: 0.08 },
       miss: { freq: 200, dur: 0.12 },
-      bust: { freq: 150, dur: 0.25, vol: 0.15 },
+      bust: { freq: 150, dur: 0.25 },
       next: { freq: 600, dur: 0.06 },
       win: { freq: 1000, dur: 0.3 },
+      click: { freq: 400, dur: 0.02 },
     };
 
-    const s = sounds[type] || sounds.hit;
+    const s = sounds[type] || sounds.click;
     osc.frequency.value = s.freq;
-    if (s.vol) gain.gain.value = s.vol;
     osc.start();
     osc.stop(ctx.currentTime + s.dur);
   } catch (e) {}
 };
 
-const haptic = () => {
-  if (navigator.vibrate) navigator.vibrate(8);
+const hapticFeedback = (intensity = 8) => {
+  if (navigator.vibrate) navigator.vibrate(intensity);
 };
 
-const randomCrypto = (max) => {
+const cryptoRandom = (max) => {
   const array = new Uint32Array(1);
   crypto.getRandomValues(array);
   return array[0] % max;
 };
 
+const speak = (text) => {
+  if ('speechSynthesis' in window) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.9;
+    utterance.pitch = 0.8;
+    speechSynthesis.speak(utterance);
+  }
+};
+
 // ============ COMPONENTS ============
 
-// Dartboard SVG Component
+// Interactive Dartboard SVG
 const Dartboard = ({ onHit, size = 300 }) => {
   const nums = [20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
   const cx = 200, cy = 200;
@@ -100,11 +143,21 @@ const Dartboard = ({ onHit, size = 300 }) => {
     const x1i = cx + Math.cos(ea) * ri, y1i = cy + Math.sin(ea) * ri;
     const x2i = cx + Math.cos(sa) * ri, y2i = cy + Math.sin(sa) * ri;
     const d = `M${x1o} ${y1o} A${ro} ${ro} 0 0 1 ${x2o} ${y2o} L${x1i} ${y1i} A${ri} ${ri} 0 0 0 ${x2i} ${y2i}Z`;
-    return <path key={`${n}-${mult}`} d={d} fill={fill} stroke="#333" strokeWidth="0.5" className="dartboard-segment" onClick={() => onHit(n, mult)} />;
+    return (
+      <path
+        key={`${n}-${mult}-${ro}`}
+        d={d}
+        fill={fill}
+        stroke="#333"
+        strokeWidth="0.5"
+        className="cursor-pointer transition-all duration-100 hover:brightness-125 active:brightness-150"
+        onClick={() => onHit(n, mult)}
+      />
+    );
   };
 
   return (
-    <svg viewBox="0 0 400 400" style={{ width: size, height: size, filter: 'drop-shadow(0 10px 30px rgba(0,0,0,0.4))' }}>
+    <svg viewBox="0 0 400 400" style={{ width: size, height: size, filter: 'drop-shadow(0 10px 40px rgba(0,0,0,0.5))' }}>
       <circle cx={cx} cy={cy} r="180" fill="#1a1a1a" />
       {nums.map((n, i) => {
         const sa = (i * 18 - 99) * Math.PI / 180;
@@ -119,82 +172,253 @@ const Dartboard = ({ onHit, size = 300 }) => {
           </React.Fragment>
         );
       })}
-      <circle cx={cx} cy={cy} r="40" fill="#2a9d8f" className="dartboard-segment" onClick={() => onHit(25, 1)} />
-      <circle cx={cx} cy={cy} r="16" fill="#e63946" className="dartboard-segment" onClick={() => onHit(50, 2)} />
+      <circle cx={cx} cy={cy} r="40" fill="#2a9d8f" className="cursor-pointer hover:brightness-125 active:brightness-150" onClick={() => onHit(25, 1)} />
+      <circle cx={cx} cy={cy} r="16" fill="#e63946" className="cursor-pointer hover:brightness-125 active:brightness-150" onClick={() => onHit(50, 2)} />
       {nums.map((n, i) => {
         const a = (i * 18 - 90) * Math.PI / 180;
-        const x = cx + Math.cos(a) * 192;
-        const y = cy + Math.sin(a) * 192;
-        return <text key={`num-${n}`} x={x} y={y} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="11" fontWeight="700">{n}</text>;
+        const x = cx + Math.cos(a) * 194;
+        const y = cy + Math.sin(a) * 194;
+        return <text key={`num-${n}`} x={x} y={y} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="12" fontWeight="700" style={{ pointerEvents: 'none' }}>{n}</text>;
       })}
     </svg>
   );
 };
 
-// Toast notification
+// Number Pad Component
+const NumberPad = ({ onScore, multiplier, setMultiplier }) => (
+  <div className="space-y-2">
+    <div className="grid grid-cols-3 gap-2">
+      {['Single', 'Double', 'Triple'].map((label, i) => (
+        <button
+          key={label}
+          onClick={() => setMultiplier(i + 1)}
+          className={`py-2 rounded-lg font-semibold text-sm transition-all ${
+            multiplier === i + 1 ? 'bg-primary text-white' : 'bg-card border border-border'
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+    <div className="grid grid-cols-4 gap-1.5">
+      {[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].map(n => (
+        <button
+          key={n}
+          onClick={() => onScore(n * multiplier, multiplier === 1 ? `S${n}` : multiplier === 2 ? `D${n}` : `T${n}`, multiplier === 2)}
+          className="h-11 rounded-lg font-mono font-bold bg-bgLight hover:bg-primary/30 active:bg-primary transition-colors"
+        >
+          {n}
+        </button>
+      ))}
+      <button
+        onClick={() => onScore(multiplier === 2 ? 50 : 25, multiplier === 2 ? 'Bull' : '25', multiplier === 2)}
+        className="h-11 rounded-lg font-mono font-bold bg-primary/30 hover:bg-primary/50 active:bg-primary"
+      >
+        {multiplier === 2 ? 'Bull' : '25'}
+      </button>
+      <button
+        onClick={() => onScore(50, 'Bull', true)}
+        className="h-11 rounded-lg font-mono font-bold bg-primary/30 hover:bg-primary/50 active:bg-primary"
+      >
+        Bull
+      </button>
+      <button
+        onClick={() => onScore(0, 'Miss', false)}
+        className="col-span-2 h-11 rounded-lg font-bold bg-red-500/80 hover:bg-red-500 active:bg-red-600 text-white"
+      >
+        MISS
+      </button>
+    </div>
+  </div>
+);
+
+// Quick Score Input
+const QuickScoreInput = ({ onScore }) => {
+  const [customValue, setCustomValue] = useState('');
+  const quickScores = [180, 140, 100, 85, 60, 45, 41, 26, 20, 0];
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-5 gap-2">
+        {quickScores.map(score => (
+          <button
+            key={score}
+            onClick={() => onScore(score)}
+            className="h-10 rounded-lg font-mono font-semibold bg-card border border-border hover:bg-primary/30 active:bg-primary transition-colors"
+          >
+            {score}
+          </button>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <input
+          type="number"
+          value={customValue}
+          onChange={(e) => setCustomValue(e.target.value)}
+          placeholder="Custom score..."
+          className="flex-1 h-11 px-4 rounded-lg bg-bgLight border border-border font-mono text-center focus:outline-none focus:border-primary"
+          min="0"
+          max="180"
+        />
+        <button
+          onClick={() => {
+            const val = parseInt(customValue);
+            if (!isNaN(val) && val >= 0 && val <= 180) {
+              onScore(val);
+              setCustomValue('');
+            }
+          }}
+          className="px-6 h-11 rounded-lg font-semibold bg-primary text-white hover:bg-primary/80"
+        >
+          Submit
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Modal Component
+const Modal = ({ isOpen, onClose, title, children }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-end animate-fadeIn" onClick={onClose}>
+      <div className="w-full max-h-[85vh] bg-bgMed rounded-t-2xl overflow-hidden animate-slideUp" onClick={e => e.stopPropagation()}>
+        <div className="p-4 pb-safe">
+          <div className="w-8 h-1 bg-border rounded-full mx-auto mb-3" />
+          {title && <h2 className="text-lg font-bold text-center mb-4">{title}</h2>}
+          <div className="overflow-y-auto max-h-[70vh]">
+            {children}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Toast Component
 const Toast = ({ message, type, onClose }) => {
   useEffect(() => {
     const timer = setTimeout(onClose, 2500);
     return () => clearTimeout(timer);
   }, [onClose]);
 
+  const bgColor = type === 'success' ? 'bg-emerald-500' : type === 'error' ? 'bg-red-500' : 'bg-primary';
+
   return (
-    <div className={`fixed top-4 left-4 right-4 z-50 p-3 rounded-xl flex items-center gap-2 font-semibold text-sm animate-fadeIn ${
-      type === 'success' ? 'bg-emerald-500' : type === 'error' ? 'bg-red-500' : 'bg-purple-500'
-    } text-white shadow-xl`}>
+    <div className={`fixed top-safe left-3 right-3 ${bgColor} text-white p-3 rounded-xl flex items-center gap-2 font-semibold shadow-xl z-50 animate-fadeIn`}>
       <span>{type === 'success' ? '✓' : type === 'error' ? '✕' : '🎯'}</span>
       <span>{message}</span>
     </div>
   );
 };
 
-// Modal wrapper
-const Modal = ({ isOpen, onClose, title, children }) => {
-  if (!isOpen) return null;
+// Announcer Component
+const Announcer = ({ text, onComplete }) => {
+  useEffect(() => {
+    const timer = setTimeout(onComplete, 1500);
+    return () => clearTimeout(timer);
+  }, [onComplete]);
+
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end" onClick={onClose}>
-      <div className="w-full max-h-[85vh] bg-slate-800 rounded-t-2xl p-4 pb-8 overflow-y-auto animate-slideUp" onClick={e => e.stopPropagation()}>
-        <div className="w-8 h-1 bg-slate-600 rounded-full mx-auto mb-4" />
-        {title && <h2 className="text-lg font-bold text-center mb-4 text-white">{title}</h2>}
-        {children}
+    <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+      <div className="text-5xl md:text-7xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent animate-announcer">
+        {text}
       </div>
+    </div>
+  );
+};
+
+// Confetti Effect
+const Confetti = () => {
+  const colors = ['#8B5CF6', '#EC4899', '#06B6D4', '#F59E0B', '#10B981', '#EF4444'];
+  const pieces = Array.from({ length: 50 }, (_, i) => ({
+    id: i,
+    left: Math.random() * 100,
+    delay: Math.random() * 0.5,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    size: 6 + Math.random() * 6,
+  }));
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-40 overflow-hidden">
+      {pieces.map(p => (
+        <div
+          key={p.id}
+          className="absolute animate-confetti"
+          style={{
+            left: `${p.left}%`,
+            top: '-10px',
+            width: p.size,
+            height: p.size,
+            backgroundColor: p.color,
+            animationDelay: `${p.delay}s`,
+            borderRadius: Math.random() > 0.5 ? '50%' : '0',
+          }}
+        />
+      ))}
     </div>
   );
 };
 
 // ============ MAIN APP ============
 export default function App() {
-  // State
-  const [screen, setScreen] = useState('home');
-  const [theme, setTheme] = useState('purple');
+  // Settings State
+  const [theme, setTheme] = useState('cosmic');
   const [background, setBackground] = useState('dark');
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [showHints, setShowHints] = useState(true);
+  const [hapticEnabled, setHapticEnabled] = useState(true);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [hintsEnabled, setHintsEnabled] = useState(true);
+  const [autoAdvance, setAutoAdvance] = useState(true);
 
-  // Game state
-  const [gameActive, setGameActive] = useState(false);
+  // Navigation State
+  const [screen, setScreen] = useState('home');
+  const [modal, setModal] = useState(null);
+
+  // Player Configuration
+  const [players, setPlayers] = useState([
+    { name: 'Player 1', avatar: '😎', color: '#8B5CF6' },
+    { name: 'Player 2', avatar: '🎯', color: '#EC4899' },
+    { name: 'Player 3', avatar: '🔥', color: '#06B6D4' },
+    { name: 'Player 4', avatar: '⚡', color: '#F59E0B' },
+  ]);
+  const [editingPlayerIdx, setEditingPlayerIdx] = useState(null);
+
+  // Game Setup
   const [gameType, setGameType] = useState('501');
   const [numPlayers, setNumPlayers] = useState(1);
-  const [players, setPlayers] = useState([
-    { name: 'Player 1', avatar: '🎯', color: '#8b5cf6' },
-    { name: 'Player 2', avatar: '🔥', color: '#3b82f6' },
-    { name: 'Player 3', avatar: '⚡', color: '#10b981' },
-    { name: 'Player 4', avatar: '💎', color: '#f97316' },
-  ]);
+  const [legs, setLegs] = useState(1);
+  const [sets, setSets] = useState(0);
+  const [checkoutMode, setCheckoutMode] = useState('double');
+  const [firstPlayer, setFirstPlayer] = useState(0);
+  const [coinFlipping, setCoinFlipping] = useState(false);
+  const [coinResult, setCoinResult] = useState(null);
+
+  // Game State
+  const [gameActive, setGameActive] = useState(false);
+  const [showBoard, setShowBoard] = useState(false);
   const [currentPlayer, setCurrentPlayer] = useState(0);
   const [scores, setScores] = useState([]);
-  const [darts, setDarts] = useState([]);
   const [legWins, setLegWins] = useState([]);
-  const [legs, setLegs] = useState(1);
-  const [inputMode, setInputMode] = useState('board'); // 'board', 'pad', 'quick'
+  const [setWins, setSetWins] = useState([]);
+  const [darts, setDarts] = useState([]);
   const [multiplier, setMultiplier] = useState(1);
+  const [inputMode, setInputMode] = useState('board');
   const [undoHistory, setUndoHistory] = useState([]);
-
-  // Stats
-  const [stats, setStats] = useState({ games: 0, wins: 0, totalScore: 0, totalDarts: 0, s180: 0, s140: 0, s100: 0, history: [] });
   const [playerStats, setPlayerStats] = useState([]);
+  const [currentLeg, setCurrentLeg] = useState(1);
+  const [currentSet, setCurrentSet] = useState(1);
 
-  // Practice state
+  // Stats & Achievements
+  const [stats, setStats] = useState({
+    games: 0, wins: 0, totalScore: 0, totalDarts: 0, highest: 0, best3: 0,
+    checkAttempts: 0, checkHits: 0, s180: 0, s140: 0, s100: 0, recent: [], history: []
+  });
+  const [achievements, setAchievements] = useState({
+    first180: false, ton80: false, checkout100: false, games10: false, avg80: false, nineDarter: false
+  });
+
+  // Practice State
   const [practiceMode, setPracticeMode] = useState(null);
   const [practiceTargets, setPracticeTargets] = useState([]);
   const [practiceIdx, setPracticeIdx] = useState(0);
@@ -202,108 +426,117 @@ export default function App() {
   const [practiceMisses, setPracticeMisses] = useState(0);
   const [bobScore, setBobScore] = useState(27);
 
-  // UI state
+  // UI State
   const [toast, setToast] = useState(null);
-  const [modal, setModal] = useState(null);
-  const [coinFlipping, setCoinFlipping] = useState(false);
-  const [coinResult, setCoinResult] = useState(null);
-  const [firstPlayer, setFirstPlayer] = useState(0);
-  const [showBoard, setShowBoard] = useState(false);
+  const [announcer, setAnnouncer] = useState(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [tip, setTip] = useState(TIPS[0]);
 
-  // Load/save
+  // Load/Save
   useEffect(() => {
-    const saved = localStorage.getItem('dartsUltimate');
+    const saved = localStorage.getItem('dartsUltimateV2');
     if (saved) {
-      const data = JSON.parse(saved);
-      if (data.theme) setTheme(data.theme);
-      if (data.background) setBackground(data.background);
-      if (data.soundEnabled !== undefined) setSoundEnabled(data.soundEnabled);
-      if (data.showHints !== undefined) setShowHints(data.showHints);
-      if (data.stats) setStats(data.stats);
-      if (data.players) setPlayers(data.players);
+      try {
+        const data = JSON.parse(saved);
+        if (data.theme) setTheme(data.theme);
+        if (data.background) setBackground(data.background);
+        if (data.soundEnabled !== undefined) setSoundEnabled(data.soundEnabled);
+        if (data.hapticEnabled !== undefined) setHapticEnabled(data.hapticEnabled);
+        if (data.voiceEnabled !== undefined) setVoiceEnabled(data.voiceEnabled);
+        if (data.hintsEnabled !== undefined) setHintsEnabled(data.hintsEnabled);
+        if (data.autoAdvance !== undefined) setAutoAdvance(data.autoAdvance);
+        if (data.players) setPlayers(data.players);
+        if (data.stats) setStats(s => ({ ...s, ...data.stats }));
+        if (data.achievements) setAchievements(a => ({ ...a, ...data.achievements }));
+      } catch (e) {}
     }
+    // Random tip
+    setTip(TIPS[cryptoRandom(TIPS.length)]);
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('dartsUltimate', JSON.stringify({ theme, background, soundEnabled, showHints, stats, players }));
-  }, [theme, background, soundEnabled, showHints, stats, players]);
+    localStorage.setItem('dartsUltimateV2', JSON.stringify({
+      theme, background, soundEnabled, hapticEnabled, voiceEnabled, hintsEnabled, autoAdvance, players, stats, achievements
+    }));
+  }, [theme, background, soundEnabled, hapticEnabled, voiceEnabled, hintsEnabled, autoAdvance, players, stats, achievements]);
 
-  // Derived values
-  const themeConfig = THEMES[theme];
-  const bgConfig = BACKGROUNDS[background];
+  // Theme CSS Variables
+  useEffect(() => {
+    const t = THEMES[theme];
+    document.documentElement.style.setProperty('--primary', t.primary);
+    document.documentElement.style.setProperty('--secondary', t.secondary);
+    document.documentElement.style.setProperty('--bg-dark', t.bg);
+    document.documentElement.style.setProperty('--bg-med', t.bgMed);
+    document.documentElement.style.setProperty('--bg-light', t.bgLight);
+  }, [theme]);
 
-  const bgClass = background === 'gradient'
-    ? `bg-gradient-to-br ${themeConfig.gradient}`
-    : bgConfig.bg;
+  // Helper functions
+  const sound = useCallback((type, vol) => {
+    if (soundEnabled) playSound(type, vol);
+  }, [soundEnabled]);
 
-  const cardClass = background === 'light'
-    ? 'bg-white/80 border border-gray-200'
-    : 'bg-white/10 backdrop-blur-sm border border-white/10';
+  const haptic = useCallback((intensity) => {
+    if (hapticEnabled) hapticFeedback(intensity);
+  }, [hapticEnabled]);
 
-  const textClass = bgConfig.text;
-  const textMutedClass = background === 'light' ? 'text-gray-500' : 'text-white/60';
-
-  // Toast helper
-  const showToast = (message, type = 'success') => {
+  const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
-  };
+  }, []);
 
-  // Sound helper
-  const sound = (type) => {
-    if (soundEnabled) playSound(type);
-    haptic();
-  };
-
-  // Checkout hint
-  const getCheckout = (score) => {
-    if (score <= 170 && score >= 2 && CHECKOUTS[score]) {
-      return CHECKOUTS[score];
+  const announce = useCallback((text) => {
+    setAnnouncer(text);
+    if (voiceEnabled) {
+      const voiceText = text === '180' ? 'One hundred and eighty!' : text;
+      speak(voiceText);
     }
-    return null;
-  };
+  }, [voiceEnabled]);
+
+  const celebrate = useCallback(() => {
+    setShowConfetti(true);
+    setTimeout(() => setShowConfetti(false), 3000);
+  }, []);
+
+  const getCheckout = useCallback((score) => {
+    return score <= 170 && score >= 2 ? CHECKOUTS[score] : null;
+  }, []);
 
   // ============ GAME LOGIC ============
-  const startGame = () => {
-    const startScore = parseInt(gameType);
+  const startGame = useCallback(() => {
+    const startScore = parseInt(gameType) || 501;
     const newScores = Array(numPlayers).fill(startScore);
     const newLegWins = Array(numPlayers).fill(0);
+    const newSetWins = Array(numPlayers).fill(0);
     const newPlayerStats = Array(numPlayers).fill(null).map(() => ({
-      darts: 0, score: 0, legDarts: 0, legScore: 0, highTurn: 0, checkAttempts: 0, checkHits: 0
+      darts: 0, score: 0, legDarts: 0, legScore: 0, first9: [], highTurn: 0, checkAttempts: 0, checkHits: 0
     }));
 
     setScores(newScores);
     setLegWins(newLegWins);
+    setSetWins(newSetWins);
     setPlayerStats(newPlayerStats);
     setCurrentPlayer(firstPlayer);
     setDarts([]);
     setUndoHistory([]);
+    setMultiplier(1);
+    setCurrentLeg(1);
+    setCurrentSet(1);
     setGameActive(true);
     setShowBoard(true);
     sound('hit');
-  };
+    haptic();
+  }, [gameType, numPlayers, firstPlayer, sound, haptic]);
 
-  const endGame = () => {
+  const endGame = useCallback(() => {
     setGameActive(false);
     setShowBoard(false);
     setDarts([]);
-  };
+    setCoinResult(null);
+  }, []);
 
-  const recordDart = (number, mult) => {
+  const recordDart = useCallback((score, label, isDouble = false) => {
     if (!gameActive || darts.length >= 3) return;
 
-    let score, label;
-    if (number === 50) {
-      score = 50;
-      label = 'Bull';
-    } else if (number === 25) {
-      score = 25;
-      label = '25';
-    } else {
-      score = number * mult;
-      label = mult === 1 ? `S${number}` : mult === 2 ? `D${number}` : `T${number}`;
-    }
-
-    const newDarts = [...darts, { score, label, isDouble: mult === 2 || number === 50 }];
+    const newDarts = [...darts, { score, label, isDouble }];
     setDarts(newDarts);
 
     // Update player stats
@@ -312,33 +545,57 @@ export default function App() {
     newStats[currentPlayer].score += score;
     newStats[currentPlayer].legDarts++;
     newStats[currentPlayer].legScore += score;
+    if (newStats[currentPlayer].legDarts <= 9) {
+      newStats[currentPlayer].first9.push(score);
+    }
     setPlayerStats(newStats);
 
     sound('throw');
+    haptic();
 
-    // Auto-advance if 3 darts thrown
+    // Check high score on 3 darts
     if (newDarts.length === 3) {
       const total = newDarts.reduce((a, d) => a + d.score, 0);
       if (total > newStats[currentPlayer].highTurn) {
         newStats[currentPlayer].highTurn = total;
       }
       checkHighScore(total);
+      if (autoAdvance) {
+        setTimeout(() => nextTurn(), 500);
+      }
     }
-  };
+  }, [gameActive, darts, currentPlayer, playerStats, sound, haptic, autoAdvance]);
 
-  const checkHighScore = (total) => {
+  const checkHighScore = useCallback((total) => {
+    let newStats = { ...stats };
+    let newAchievements = { ...achievements };
+
+    if (total > newStats.best3) newStats.best3 = total;
+
     if (total === 180) {
-      setStats(s => ({ ...s, s180: s.s180 + 1 }));
+      newStats.s180++;
+      newAchievements.first180 = true;
+      announce('180!');
+      celebrate();
       showToast('ONE HUNDRED AND EIGHTY! 🎯', 'celebrate');
+    } else if (total >= 160) {
+      newStats.s140++;
+      newAchievements.ton80 = true;
+      announce(total.toString());
+      showToast(`${total}! 🔥`, 'success');
     } else if (total >= 140) {
-      setStats(s => ({ ...s, s140: s.s140 + 1 }));
+      newStats.s140++;
+      announce(total.toString());
       showToast(`${total}! 🔥`, 'success');
     } else if (total >= 100) {
-      setStats(s => ({ ...s, s100: s.s100 + 1 }));
+      newStats.s100++;
     }
-  };
 
-  const nextTurn = () => {
+    setStats(newStats);
+    setAchievements(newAchievements);
+  }, [stats, achievements, announce, celebrate, showToast]);
+
+  const nextTurn = useCallback(() => {
     if (!gameActive) return;
 
     const turnTotal = darts.reduce((a, d) => a + d.score, 0);
@@ -350,41 +607,40 @@ export default function App() {
       player: currentPlayer,
       darts: [...darts],
       turnTotal,
-      scoreBefore: scores[currentPlayer]
+      scoreBefore: scores[currentPlayer],
+      statsBefore: { ...playerStats[currentPlayer] }
     }]);
+
+    // Check for checkout attempt
+    if (scores[currentPlayer] <= 170 && CHECKOUTS[scores[currentPlayer]]) {
+      const newStats = [...playerStats];
+      newStats[currentPlayer].checkAttempts++;
+      setPlayerStats(newStats);
+      setStats(s => ({ ...s, checkAttempts: s.checkAttempts + 1 }));
+    }
 
     const newScore = scores[currentPlayer] - turnTotal;
 
-    // Check for bust
-    if (newScore < 0 || newScore === 1 || (newScore === 0 && !isDoubleOut)) {
+    // Bust check
+    if (newScore < 0 || newScore === 1 || (checkoutMode === 'double' && newScore === 0 && !isDoubleOut)) {
       showToast('BUST! 💥', 'error');
-      sound('bust');
-      // Don't update score on bust
+      sound('bust', 0.15);
+      // Score doesn't change on bust
     } else if (newScore === 0) {
-      // Leg won!
-      const newLegWins = [...legWins];
-      newLegWins[currentPlayer]++;
-      setLegWins(newLegWins);
+      // Checkout!
+      const newStats = [...playerStats];
+      newStats[currentPlayer].checkHits++;
+      setPlayerStats(newStats);
+      setStats(s => ({ ...s, checkHits: s.checkHits + 1 }));
 
-      const needed = Math.ceil(legs / 2);
-      if (newLegWins[currentPlayer] >= needed) {
-        // Match won!
-        matchWon(currentPlayer);
-        return;
-      } else {
-        // New leg
-        showToast(`${players[currentPlayer].name} wins the leg! 🎉`, 'success');
-        const startScore = parseInt(gameType);
-        setScores(Array(numPlayers).fill(startScore));
-        const newStats = [...playerStats];
-        for (let i = 0; i < numPlayers; i++) {
-          newStats[i].legDarts = 0;
-          newStats[i].legScore = 0;
-        }
-        setPlayerStats(newStats);
+      if (turnTotal >= 100) {
+        setAchievements(a => ({ ...a, checkout100: true }));
       }
+
+      legWon(currentPlayer);
+      return;
     } else {
-      // Normal turn
+      // Normal turn - update score
       const newScores = [...scores];
       newScores[currentPlayer] = newScore;
       setScores(newScores);
@@ -395,32 +651,117 @@ export default function App() {
     setDarts([]);
     setMultiplier(1);
     sound('next');
-  };
+  }, [gameActive, darts, currentPlayer, scores, playerStats, checkoutMode, numPlayers, showToast, sound]);
 
-  const matchWon = (winner) => {
+  const legWon = useCallback((winner) => {
+    const newLegWins = [...legWins];
+    newLegWins[winner]++;
+    setLegWins(newLegWins);
+
+    const neededLegs = sets > 0 ? Math.ceil(3 / 2) : Math.ceil(legs / 2);
+
+    if (sets > 0) {
+      // Playing with sets
+      if (newLegWins[winner] >= neededLegs) {
+        // Set won
+        const newSetWins = [...setWins];
+        newSetWins[winner]++;
+        setSetWins(newSetWins);
+
+        const neededSets = Math.ceil(sets / 2);
+        if (newSetWins[winner] >= neededSets) {
+          matchWon(winner);
+          return;
+        }
+
+        // Reset legs for new set
+        setLegWins(Array(numPlayers).fill(0));
+        setCurrentSet(s => s + 1);
+        showToast(`${players[winner].name} wins the set! 🎉`, 'success');
+      } else {
+        setCurrentLeg(l => l + 1);
+        showToast(`${players[winner].name} wins the leg! 🎉`, 'success');
+      }
+    } else {
+      // Playing legs only
+      if (newLegWins[winner] >= neededLegs) {
+        matchWon(winner);
+        return;
+      }
+      setCurrentLeg(l => l + 1);
+      showToast(`${players[winner].name} wins the leg! 🎉`, 'success');
+    }
+
+    // Reset for new leg
+    const startScore = parseInt(gameType) || 501;
+    setScores(Array(numPlayers).fill(startScore));
+    const newStats = [...playerStats];
+    for (let i = 0; i < numPlayers; i++) {
+      // Check for 9 darter
+      if (i === winner && newStats[i].legDarts === 9 && gameType === '501') {
+        setAchievements(a => ({ ...a, nineDarter: true }));
+        showToast('NINE DARTER! ⭐', 'celebrate');
+        celebrate();
+      }
+      newStats[i].legDarts = 0;
+      newStats[i].legScore = 0;
+      newStats[i].first9 = [];
+    }
+    setPlayerStats(newStats);
+    setCurrentPlayer((currentPlayer + 1) % numPlayers);
+    setDarts([]);
+    setMultiplier(1);
+  }, [legWins, setWins, sets, legs, numPlayers, gameType, players, playerStats, currentPlayer, showToast, celebrate]);
+
+  const matchWon = useCallback((winner) => {
     setGameActive(false);
     setShowBoard(false);
 
     const ps = playerStats[winner];
     const avg = ps.darts > 0 ? (ps.score / ps.darts * 3).toFixed(1) : '0';
+    const first9Avg = ps.first9.length > 0 ? (ps.first9.reduce((a, b) => a + b, 0) / ps.first9.length * 3).toFixed(1) : '0';
+    const checkPct = ps.checkAttempts > 0 ? Math.round(ps.checkHits / ps.checkAttempts * 100) : 0;
 
-    setStats(s => ({
-      ...s,
-      games: s.games + 1,
-      wins: winner === 0 || numPlayers === 1 ? s.wins + 1 : s.wins,
-      history: [{ date: new Date().toISOString(), winner: players[winner].name, avg }, ...s.history.slice(0, 49)]
-    }));
+    // Update global stats
+    setStats(s => {
+      const newStats = {
+        ...s,
+        games: s.games + 1,
+        wins: (winner === 0 || numPlayers === 1) ? s.wins + 1 : s.wins,
+        totalScore: s.totalScore + ps.score,
+        totalDarts: s.totalDarts + ps.darts,
+        recent: [...s.recent.slice(-9), Math.round(parseFloat(avg))],
+        history: [{
+          date: new Date().toISOString(),
+          players: players.slice(0, numPlayers).map(p => p.name),
+          winner: players[winner].name,
+          avg,
+          first9: first9Avg
+        }, ...s.history.slice(0, 49)]
+      };
+      return newStats;
+    });
 
+    // Check achievements
+    setAchievements(a => {
+      const newA = { ...a };
+      if (stats.games + 1 >= 10) newA.games10 = true;
+      if (parseFloat(avg) >= 80) newA.avg80 = true;
+      return newA;
+    });
+
+    // Show winner modal
     setModal({
       type: 'winner',
       winner: players[winner],
-      stats: { avg, darts: ps.darts, highTurn: ps.highTurn }
+      stats: { avg, first9Avg, checkPct, darts: ps.darts, highTurn: ps.highTurn, legDarts: ps.legDarts }
     });
 
     sound('win');
-  };
+    celebrate();
+  }, [playerStats, numPlayers, players, stats, sound, celebrate]);
 
-  const undoAction = () => {
+  const undoAction = useCallback(() => {
     if (darts.length > 0) {
       const lastDart = darts[darts.length - 1];
       setDarts(darts.slice(0, -1));
@@ -443,29 +784,44 @@ export default function App() {
       newScores[prev.player] = prev.scoreBefore;
       setScores(newScores);
 
+      const newStats = [...playerStats];
+      newStats[prev.player] = { ...prev.statsBefore };
+      setPlayerStats(newStats);
+
       showToast('Turn undone', 'success');
       haptic();
     }
-  };
+  }, [darts, currentPlayer, playerStats, undoHistory, scores, haptic, showToast]);
 
   // Coin flip
-  const flipCoin = () => {
+  const flipCoin = useCallback(() => {
     if (coinFlipping) return;
     setCoinFlipping(true);
     setCoinResult(null);
     sound('throw');
 
     setTimeout(() => {
-      const result = randomCrypto(numPlayers);
+      const result = cryptoRandom(numPlayers);
       setCoinResult(result);
       setFirstPlayer(result);
       setCoinFlipping(false);
       sound('hit');
+      haptic();
     }, 1000);
-  };
+  }, [coinFlipping, numPlayers, sound, haptic]);
+
+  // Quick start
+  const quickStart = useCallback((type) => {
+    setGameType(type);
+    setNumPlayers(1);
+    setFirstPlayer(0);
+    setLegs(1);
+    setSets(0);
+    setTimeout(() => startGame(), 50);
+  }, [startGame]);
 
   // ============ PRACTICE LOGIC ============
-  const startPractice = (mode) => {
+  const startPractice = useCallback((mode) => {
     let targets = [];
     switch (mode) {
       case 'doubles':
@@ -482,13 +838,13 @@ export default function App() {
         targets = [20, 19, 18, 17, 16, 15].map(n => ({ target: `T${n}`, value: n * 3 }));
         break;
       case 'checkout':
-        targets = [20, 16, 10, 8, 4, 2].map(n => ({ target: `D${n}`, value: n * 2 }));
+        targets = [32, 40, 36, 24, 16, 8, 20, 12, 4, 2].map(n => ({ target: `D${n/2}`, value: n }));
         break;
       case 'random':
         targets = Array.from({ length: 15 }, () => {
           const types = ['S', 'D', 'T'];
-          const t = types[randomCrypto(3)];
-          const n = randomCrypto(20) + 1;
+          const t = types[cryptoRandom(3)];
+          const n = cryptoRandom(20) + 1;
           return { target: `${t}${n}`, value: n * (t === 'S' ? 1 : t === 'D' ? 2 : 3) };
         });
         break;
@@ -499,11 +855,11 @@ export default function App() {
     setPracticeIdx(0);
     setPracticeHits(0);
     setPracticeMisses(0);
-    setScreen('practice');
     sound('hit');
-  };
+    haptic();
+  }, [sound, haptic]);
 
-  const practiceResult = (hit) => {
+  const practiceResult = useCallback((hit) => {
     if (practiceMode === 'bob27') {
       const val = practiceTargets[practiceIdx].value;
       if (hit) {
@@ -524,145 +880,172 @@ export default function App() {
         sound('miss');
       }
     }
+    haptic();
 
     if (practiceIdx + 1 >= practiceTargets.length) {
-      // Practice complete
-      const acc = Math.round((practiceHits + (hit ? 1 : 0)) / practiceTargets.length * 100);
+      const finalHits = practiceHits + (hit ? 1 : 0);
+      const acc = Math.round(finalHits / practiceTargets.length * 100);
       if (practiceMode === 'bob27') {
         const finalScore = bobScore + (hit ? practiceTargets[practiceIdx].value : -practiceTargets[practiceIdx].value);
-        showToast(`Final: ${finalScore}`, finalScore > 0 ? 'success' : 'error');
+        showToast(`Final Score: ${finalScore}`, finalScore > 0 ? 'success' : 'error');
       } else {
-        showToast(`Complete! ${acc}%`, acc >= 50 ? 'success' : 'error');
+        showToast(`Complete! ${acc}% accuracy`, acc >= 50 ? 'success' : 'error');
       }
-      setTimeout(() => {
-        setPracticeMode(null);
-      }, 1500);
+      setTimeout(() => setPracticeMode(null), 1500);
     } else {
       setPracticeIdx(i => i + 1);
     }
-  };
+  }, [practiceMode, practiceTargets, practiceIdx, practiceHits, bobScore, sound, haptic, showToast]);
 
-  // ============ RENDER ============
+  // Share result
+  const shareResult = useCallback(() => {
+    if (!modal?.winner) return;
+    const text = `🎯 Darts Ultimate\n\n🏆 ${modal.winner.name} wins!\nAverage: ${modal.stats.avg}\nFirst 9: ${modal.stats.first9Avg}\nCheckout: ${modal.stats.checkPct}%\n\n#darts #dartsultimate`;
+
+    if (navigator.share) {
+      navigator.share({ title: 'Darts Ultimate', text });
+    } else {
+      navigator.clipboard.writeText(text);
+      showToast('Copied to clipboard!', 'success');
+    }
+  }, [modal, showToast]);
+
+  // ============ DERIVED VALUES ============
   const turnTotal = darts.reduce((a, d) => a + d.score, 0);
   const currentScore = gameActive ? scores[currentPlayer] - turnTotal : 0;
-  const checkout = showHints && gameActive ? getCheckout(currentScore) : null;
+  const checkout = hintsEnabled && gameActive ? getCheckout(currentScore) : null;
 
+  const themeColors = THEMES[theme];
+  const bgClass = background === 'light'
+    ? 'bg-gray-100 text-gray-900'
+    : background === 'gradient'
+    ? 'bg-gradient-to-br from-[var(--primary)] via-[var(--bg-dark)] to-[var(--secondary)] text-white'
+    : 'bg-[var(--bg-dark)] text-white';
+
+  // ============ RENDER ============
   return (
-    <div className={`h-full flex flex-col ${bgClass} ${textClass} safe-top`}>
+    <div className={`h-full flex flex-col ${bgClass} overflow-hidden`} style={{ '--primary': themeColors.primary, '--secondary': themeColors.secondary }}>
       {/* Toast */}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
+      {/* Announcer */}
+      {announcer && <Announcer text={announcer} onComplete={() => setAnnouncer(null)} />}
+
+      {/* Confetti */}
+      {showConfetti && <Confetti />}
+
       {/* Header */}
-      <header className={`flex items-center justify-between px-4 py-3 ${cardClass}`}>
-        <div className="flex items-center gap-2">
-          <span className="text-xl">🎯</span>
-          <span className="font-bold">Darts Ultimate</span>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={() => setModal({ type: 'settings' })} className="p-2 rounded-lg bg-white/10 hover:bg-white/20">
-            <Settings size={20} />
-          </button>
-        </div>
-      </header>
+      {!showBoard && (
+        <header className="flex items-center justify-between px-4 py-3 bg-bgMed/50 backdrop-blur-sm border-b border-white/10 safe-top">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🎯</span>
+            <span className="font-bold text-lg">Darts Ultimate</span>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => setModal({ type: 'history' })} className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition-colors">
+              <Clock size={18} />
+            </button>
+            <button onClick={() => setModal({ type: 'settings' })} className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition-colors">
+              <Settings size={18} />
+            </button>
+          </div>
+        </header>
+      )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-4 pb-20">
+      <main className={`flex-1 overflow-y-auto ${showBoard ? '' : 'pb-20'}`}>
 
-        {/* Home Screen */}
+        {/* ========== HOME SCREEN ========== */}
         {screen === 'home' && !gameActive && (
-          <div className="space-y-4 animate-fadeIn">
+          <div className="p-4 space-y-4 animate-fadeIn">
             {/* Stats Row */}
             <div className="grid grid-cols-3 gap-2">
-              {[
-                { label: 'Games', value: stats.games },
-                { label: 'Wins', value: stats.wins },
-                { label: '180s', value: stats.s180 },
-              ].map(s => (
-                <div key={s.label} className={`${cardClass} rounded-xl p-3 text-center`}>
-                  <div className={`text-2xl font-bold bg-gradient-to-r ${themeConfig.gradient} bg-clip-text text-transparent`}>{s.value}</div>
-                  <div className={`text-xs ${textMutedClass}`}>{s.label}</div>
-                </div>
-              ))}
+              <StatBox label="Average" value={stats.totalDarts > 0 ? (stats.totalScore / stats.totalDarts * 3).toFixed(0) : '0'} />
+              <StatBox label="Games" value={stats.games} />
+              <StatBox label="Wins" value={stats.wins} />
             </div>
 
             {/* Quick Play */}
             <div>
-              <h2 className="font-semibold mb-2 flex items-center gap-2"><Zap size={18} /> Quick Play</h2>
-              <div className="grid grid-cols-3 gap-2">
-                {GAME_MODES.map(mode => (
+              <SectionTitle icon="🎮" text="Quick Play" />
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: '501', icon: '5️⃣', name: '501', desc: 'Classic' },
+                  { id: '301', icon: '3️⃣', name: '301', desc: 'Quick' },
+                ].map(mode => (
                   <button
                     key={mode.id}
-                    onClick={() => { setGameType(mode.id); setNumPlayers(1); setFirstPlayer(0); startGame(); }}
-                    className={`${cardClass} rounded-xl p-4 text-center hover:scale-105 transition-transform`}
+                    onClick={() => quickStart(mode.id)}
+                    className="bg-white/10 hover:bg-white/20 rounded-xl p-4 text-center transition-transform hover:scale-[1.02] active:scale-[0.98]"
                   >
                     <div className="text-2xl mb-1">{mode.icon}</div>
                     <div className="font-bold">{mode.name}</div>
-                    <div className={`text-xs ${textMutedClass}`}>{mode.desc}</div>
+                    <div className="text-xs opacity-60">{mode.desc}</div>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Recent */}
-            {stats.history.length > 0 && (
-              <div>
-                <h2 className="font-semibold mb-2 flex items-center gap-2"><Trophy size={18} /> Recent</h2>
-                <div className={`${cardClass} rounded-xl p-3`}>
-                  {stats.history.slice(0, 3).map((h, i) => (
-                    <div key={i} className={`flex justify-between py-2 ${i > 0 ? 'border-t border-white/10' : ''}`}>
-                      <span>🏆 {h.winner}</span>
-                      <span className={textMutedClass}>Avg: {h.avg}</span>
-                    </div>
-                  ))}
-                </div>
+            {/* Daily Tip */}
+            <div className="bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] rounded-xl p-4">
+              <div className="text-xs uppercase opacity-80 flex items-center gap-1"><Lightbulb size={12} /> Tip</div>
+              <div className="font-bold mt-1">{tip.title}</div>
+              <div className="text-sm opacity-90">{tip.text}</div>
+            </div>
+
+            {/* Achievements */}
+            <div>
+              <SectionTitle icon="🏆" text="Achievements" />
+              <div className="grid grid-cols-3 gap-2">
+                {Object.entries(ACHIEVEMENTS).map(([key, ach]) => (
+                  <div
+                    key={key}
+                    className={`rounded-xl p-3 text-center transition-all ${
+                      achievements[key] ? 'bg-gradient-to-br from-[var(--primary)]/30 to-[var(--secondary)]/30 border border-[var(--primary)]' : 'bg-white/5 opacity-40'
+                    }`}
+                  >
+                    <div className="text-xl mb-1">{ach.icon}</div>
+                    <div className="text-xs font-semibold">{ach.name}</div>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
           </div>
         )}
 
-        {/* Play Setup Screen */}
+        {/* ========== PLAY SETUP SCREEN ========== */}
         {screen === 'play' && !gameActive && (
-          <div className="space-y-4 animate-fadeIn">
+          <div className="p-4 space-y-4 animate-fadeIn">
             {/* Game Type */}
-            <div className={`${cardClass} rounded-xl p-4`}>
-              <h3 className={`text-sm ${textMutedClass} mb-2`}>GAME TYPE</h3>
-              <div className="flex gap-2">
-                {GAME_MODES.map(mode => (
-                  <button
-                    key={mode.id}
-                    onClick={() => setGameType(mode.id)}
-                    className={`flex-1 py-2 rounded-lg font-semibold transition-all ${
-                      gameType === mode.id ? `bg-${themeConfig.primary} text-white` : 'bg-white/10'
-                    }`}
-                  >
-                    {mode.name}
-                  </button>
+            <Card title="🎯 Game Type">
+              <div className="grid grid-cols-3 gap-2">
+                {['501', '301', '701'].map(type => (
+                  <SelectButton key={type} selected={gameType === type} onClick={() => setGameType(type)}>
+                    {type}
+                  </SelectButton>
                 ))}
               </div>
-            </div>
+            </Card>
 
             {/* Players */}
-            <div className={`${cardClass} rounded-xl p-4`}>
-              <h3 className={`text-sm ${textMutedClass} mb-2`}>PLAYERS</h3>
-              <div className="flex gap-2 mb-4">
+            <Card title="👥 Players">
+              <div className="grid grid-cols-4 gap-2 mb-4">
                 {[1, 2, 3, 4].map(n => (
-                  <button
-                    key={n}
-                    onClick={() => setNumPlayers(n)}
-                    className={`flex-1 py-2 rounded-lg font-semibold transition-all ${
-                      numPlayers === n ? `bg-${themeConfig.primary} text-white` : 'bg-white/10'
-                    }`}
-                  >
+                  <SelectButton key={n} selected={numPlayers === n} onClick={() => setNumPlayers(n)}>
                     {n}
-                  </button>
+                  </SelectButton>
                 ))}
               </div>
               <div className="space-y-2">
                 {players.slice(0, numPlayers).map((p, i) => (
-                  <div key={i} className="flex items-center gap-3 bg-white/5 rounded-lg p-2">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl" style={{ background: p.color }}>
+                  <div key={i} className="flex items-center gap-3 bg-white/5 rounded-xl p-3">
+                    <button
+                      onClick={() => { setEditingPlayerIdx(i); setModal({ type: 'avatar' }); }}
+                      className="w-12 h-12 rounded-full flex items-center justify-center text-2xl shrink-0 transition-transform hover:scale-110"
+                      style={{ background: p.color }}
+                    >
                       {p.avatar}
-                    </div>
+                    </button>
                     <input
                       type="text"
                       value={p.name}
@@ -671,79 +1054,111 @@ export default function App() {
                         newPlayers[i].name = e.target.value;
                         setPlayers(newPlayers);
                       }}
-                      className="flex-1 bg-transparent border-none outline-none font-semibold"
+                      className="flex-1 bg-transparent border-none outline-none font-semibold text-lg"
+                      placeholder={`Player ${i + 1}`}
                     />
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
 
-            {/* Legs */}
-            <div className={`${cardClass} rounded-xl p-4`}>
-              <h3 className={`text-sm ${textMutedClass} mb-2`}>FORMAT</h3>
-              <div className="flex gap-2">
+            {/* Format */}
+            <Card title="🎲 Format">
+              <div className="text-xs text-white/60 mb-2">LEGS</div>
+              <div className="grid grid-cols-4 gap-2 mb-3">
                 {[1, 3, 5, 7].map(n => (
-                  <button
-                    key={n}
-                    onClick={() => setLegs(n)}
-                    className={`flex-1 py-2 rounded-lg font-semibold transition-all ${
-                      legs === n ? `bg-${themeConfig.primary} text-white` : 'bg-white/10'
-                    }`}
-                  >
+                  <SelectButton key={n} selected={legs === n && sets === 0} onClick={() => { setLegs(n); setSets(0); }}>
                     {n === 1 ? '1 Leg' : `Bo${n}`}
-                  </button>
+                  </SelectButton>
                 ))}
               </div>
-            </div>
+              <div className="text-xs text-white/60 mb-2">SETS</div>
+              <div className="grid grid-cols-3 gap-2">
+                {[3, 5, 7].map(n => (
+                  <SelectButton key={n} selected={sets === n} onClick={() => { setSets(n); setLegs(3); }}>
+                    {n} Sets
+                  </SelectButton>
+                ))}
+              </div>
+            </Card>
+
+            {/* Checkout Mode */}
+            <Card title="🎯 Checkout">
+              <div className="grid grid-cols-2 gap-2">
+                <SelectButton selected={checkoutMode === 'double'} onClick={() => setCheckoutMode('double')}>
+                  Double Out
+                </SelectButton>
+                <SelectButton selected={checkoutMode === 'straight'} onClick={() => setCheckoutMode('straight')}>
+                  Straight Out
+                </SelectButton>
+              </div>
+            </Card>
 
             {/* Coin Toss */}
             {numPlayers > 1 && (
-              <div className={`${cardClass} rounded-xl p-4 text-center`}>
-                <h3 className={`text-sm ${textMutedClass} mb-3`}>WHO GOES FIRST?</h3>
-                <button
-                  onClick={flipCoin}
-                  className={`w-20 h-20 rounded-full mx-auto mb-3 flex items-center justify-center text-3xl bg-gradient-to-br ${themeConfig.gradient} shadow-xl ${coinFlipping ? 'animate-coinFlip' : ''}`}
-                >
-                  {coinResult !== null ? players[coinResult].avatar : '🎯'}
-                </button>
-                <div className="font-semibold">
-                  {coinResult !== null ? `${players[coinResult].name} goes first!` : 'Tap to flip'}
+              <Card title="🪙 Who Goes First?">
+                <div className="text-center py-4">
+                  <button
+                    onClick={flipCoin}
+                    className={`w-20 h-20 rounded-full mx-auto mb-3 flex items-center justify-center text-3xl shadow-xl transition-transform ${coinFlipping ? 'animate-coinFlip' : 'hover:scale-110'}`}
+                    style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))` }}
+                  >
+                    {coinResult !== null ? players[coinResult].avatar : '🎯'}
+                  </button>
+                  <div className="font-semibold">
+                    {coinResult !== null ? `${players[coinResult].name} goes first!` : 'Tap to flip!'}
+                  </div>
                 </div>
-              </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button onClick={flipCoin} className="py-2.5 rounded-xl bg-white/10 font-semibold hover:bg-white/20">
+                    🎲 Random
+                  </button>
+                  <button onClick={() => setModal({ type: 'chooseFirst' })} className="py-2.5 rounded-xl bg-white/10 font-semibold hover:bg-white/20">
+                    ✋ Choose
+                  </button>
+                </div>
+              </Card>
             )}
 
             {/* Start Button */}
             <button
               onClick={startGame}
-              className={`w-full py-4 rounded-xl font-bold text-lg bg-gradient-to-r ${themeConfig.gradient} text-white shadow-xl`}
+              className="w-full py-4 rounded-xl font-bold text-lg text-white shadow-xl transition-transform hover:scale-[1.02] active:scale-[0.98]"
+              style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))` }}
             >
-              Start Match
+              🎯 Start Match
             </button>
           </div>
         )}
 
-        {/* Game Active - Fullscreen Board */}
+        {/* ========== FULLSCREEN BOARD ========== */}
         {gameActive && showBoard && (
-          <div className="fixed inset-0 z-40 flex flex-col bg-slate-900 safe-top safe-bottom">
+          <div className="fixed inset-0 z-40 flex flex-col bg-[var(--bg-dark)]">
             {/* Scoreboard */}
-            <div className="flex gap-2 p-2 bg-slate-800">
+            <div className="flex gap-1.5 p-2 bg-bgMed safe-top">
               {players.slice(0, numPlayers).map((p, i) => {
                 const ps = playerStats[i];
-                const turnScore = i === currentPlayer ? turnTotal : 0;
-                const displayScore = scores[i] - turnScore;
-                const avg = ps?.darts > 0 ? (ps.score / ps.darts * 3).toFixed(1) : '0.0';
                 const isActive = i === currentPlayer;
+                const displayScore = i === currentPlayer ? scores[i] - turnTotal : scores[i];
+                const avg = ps?.darts > 0 ? (ps.score / ps.darts * 3).toFixed(1) : '0.0';
+
                 return (
                   <div
                     key={i}
-                    className={`flex-1 rounded-lg p-2 text-center transition-all ${
-                      isActive ? `bg-gradient-to-br ${themeConfig.gradient} shadow-lg` : 'bg-slate-700/50'
+                    className={`flex-1 rounded-xl p-2 text-center transition-all ${
+                      isActive ? 'ring-2 ring-[var(--primary)] shadow-lg shadow-[var(--primary)]/30' : ''
                     }`}
+                    style={{ background: isActive ? `${p.color}30` : 'rgba(255,255,255,0.05)' }}
                   >
-                    <div className="text-lg">{p.avatar}</div>
-                    <div className="text-xs text-white/70 truncate">{p.name}</div>
-                    <div className="text-2xl font-bold font-mono">{displayScore}</div>
-                    <div className="text-xs text-white/50">Avg: {avg} | L: {legWins[i]}</div>
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="text-lg">{p.avatar}</span>
+                      {isActive && <span className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse" />}
+                    </div>
+                    <div className="text-xs opacity-70 truncate">{p.name}</div>
+                    <div className="text-3xl font-bold font-mono" style={{ color: isActive ? 'var(--primary)' : 'white' }}>
+                      {displayScore}
+                    </div>
+                    <div className="text-xs opacity-50">Avg: {avg} | L: {legWins[i]}{sets > 0 ? ` | S: ${setWins[i]}` : ''}</div>
                   </div>
                 );
               })}
@@ -752,58 +1167,98 @@ export default function App() {
             {/* Close Button */}
             <button
               onClick={endGame}
-              className="absolute top-2 right-2 z-50 w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center"
+              className="absolute top-safe right-2 z-50 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center mt-2"
             >
               <X size={20} />
             </button>
 
             {/* Checkout Hint */}
             {checkout && (
-              <div className={`bg-gradient-to-r ${themeConfig.gradient} py-2 px-4 text-center`}>
+              <div className="py-2 px-4 text-center" style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))` }}>
                 <span className="text-xs opacity-80">CHECKOUT: </span>
-                <span className="font-bold font-mono">{checkout}</span>
+                <span className="font-bold font-mono text-lg">{checkout}</span>
               </div>
             )}
 
-            {/* Dartboard */}
-            <div className="flex-1 flex items-center justify-center p-4 relative">
+            {/* Board Area */}
+            <div className="flex-1 flex items-center justify-center p-2 relative min-h-0">
               {/* Darts thrown overlay */}
-              <div className="absolute top-2 left-1/2 -translate-x-1/2 flex gap-1 bg-black/60 backdrop-blur rounded-full px-3 py-1">
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/70 backdrop-blur rounded-full px-3 py-1.5 z-10">
                 {[0, 1, 2].map(i => (
                   <div
                     key={i}
-                    className={`min-w-[40px] h-7 rounded-full flex items-center justify-center font-mono text-sm font-bold ${
-                      darts[i] ? `bg-gradient-to-r ${themeConfig.gradient}` : 'bg-slate-700'
+                    className={`min-w-[44px] h-8 rounded-full flex items-center justify-center font-mono text-sm font-bold ${
+                      darts[i] ? '' : 'bg-white/10'
                     }`}
+                    style={darts[i] ? { background: `linear-gradient(135deg, var(--primary), var(--secondary))` } : {}}
                   >
                     {darts[i]?.label || '-'}
                   </div>
                 ))}
-                <div className={`min-w-[50px] h-7 rounded-full flex items-center justify-center font-mono text-sm font-bold bg-${themeConfig.primary}`}>
+                <div
+                  className="min-w-[54px] h-8 rounded-full flex items-center justify-center font-mono font-bold"
+                  style={{ background: 'var(--primary)' }}
+                >
                   {turnTotal}
                 </div>
               </div>
 
-              <Dartboard onHit={recordDart} size={Math.min(window.innerWidth - 32, window.innerHeight - 300)} />
+              <Dartboard
+                onHit={(n, mult) => {
+                  let score, label, isDouble;
+                  if (n === 50) {
+                    score = 50; label = 'Bull'; isDouble = true;
+                  } else if (n === 25) {
+                    score = 25; label = '25'; isDouble = false;
+                  } else {
+                    score = n * mult;
+                    label = mult === 1 ? `S${n}` : mult === 2 ? `D${n}` : `T${n}`;
+                    isDouble = mult === 2;
+                  }
+                  recordDart(score, label, isDouble);
+                }}
+                size={Math.min(window.innerWidth - 16, window.innerHeight - 300)}
+              />
+            </div>
+
+            {/* Stats Bar */}
+            <div className="flex justify-center gap-6 py-2 bg-white/5 text-xs">
+              <div className="text-center">
+                <div className="font-mono font-bold">{playerStats[currentPlayer]?.legDarts > 0 ? (playerStats[currentPlayer].legScore / playerStats[currentPlayer].legDarts * 3).toFixed(1) : '0.0'}</div>
+                <div className="opacity-50">Leg Avg</div>
+              </div>
+              <div className="text-center">
+                <div className="font-mono font-bold">{playerStats[currentPlayer]?.darts > 0 ? (playerStats[currentPlayer].score / playerStats[currentPlayer].darts * 3).toFixed(1) : '0.0'}</div>
+                <div className="opacity-50">Match Avg</div>
+              </div>
+              <div className="text-center">
+                <div className="font-mono font-bold">{playerStats[currentPlayer]?.legDarts || 0}</div>
+                <div className="opacity-50">Darts</div>
+              </div>
+              <div className="text-center">
+                <div className="font-mono font-bold">{playerStats[currentPlayer]?.highTurn || 0}</div>
+                <div className="opacity-50">High</div>
+              </div>
             </div>
 
             {/* Bottom Actions */}
-            <div className="flex gap-2 p-3 bg-slate-800">
+            <div className="flex gap-2 p-3 bg-bgMed safe-bottom">
               <button
-                onClick={() => recordDart(0, 1)}
-                className="flex-[0.7] py-3 rounded-xl font-bold bg-red-500 text-white"
+                onClick={() => recordDart(0, 'Miss', false)}
+                className="flex-[0.6] py-3.5 rounded-xl font-bold bg-red-500 text-white active:scale-95 transition-transform"
               >
-                Miss
+                ✕ Miss
               </button>
               <button
                 onClick={undoAction}
-                className="flex-1 py-3 rounded-xl font-bold bg-slate-700 text-white flex items-center justify-center gap-2"
+                className="flex-1 py-3.5 rounded-xl font-bold bg-white/10 flex items-center justify-center gap-2 active:scale-95 transition-transform"
               >
                 <RotateCcw size={18} /> Undo
               </button>
               <button
                 onClick={nextTurn}
-                className={`flex-1 py-3 rounded-xl font-bold bg-gradient-to-r ${themeConfig.gradient} text-white flex items-center justify-center gap-2`}
+                className="flex-1 py-3.5 rounded-xl font-bold text-white flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))` }}
               >
                 Next <ChevronRight size={18} />
               </button>
@@ -811,25 +1266,28 @@ export default function App() {
           </div>
         )}
 
-        {/* Practice Screen */}
+        {/* ========== PRACTICE SCREEN ========== */}
         {screen === 'practice' && !practiceMode && (
-          <div className="space-y-4 animate-fadeIn">
-            <h2 className="font-semibold flex items-center gap-2"><Dumbbell size={18} /> Practice Drills</h2>
+          <div className="p-4 space-y-4 animate-fadeIn">
+            <SectionTitle icon="💪" text="Practice Drills" />
             <div className="space-y-2">
               {PRACTICE_MODES.map(mode => (
                 <button
                   key={mode.id}
                   onClick={() => startPractice(mode.id)}
-                  className={`w-full ${cardClass} rounded-xl p-4 flex items-center gap-4 text-left hover:scale-[1.02] transition-transform`}
+                  className="w-full flex items-center gap-4 bg-white/10 hover:bg-white/20 rounded-xl p-4 text-left transition-all hover:translate-x-1"
                 >
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl bg-gradient-to-br ${themeConfig.gradient}`}>
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0"
+                    style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))` }}
+                  >
                     {mode.icon}
                   </div>
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <div className="font-bold">{mode.name}</div>
-                    <div className={`text-sm ${textMutedClass}`}>{mode.desc}</div>
+                    <div className="text-sm opacity-60">{mode.desc}</div>
                   </div>
-                  <ChevronRight className={`ml-auto ${textMutedClass}`} />
+                  <ChevronRight className="opacity-40" />
                 </button>
               ))}
             </div>
@@ -838,147 +1296,178 @@ export default function App() {
 
         {/* Practice Active */}
         {screen === 'practice' && practiceMode && (
-          <div className="space-y-4 animate-fadeIn">
-            <div className={`${cardClass} rounded-xl p-6 text-center`}>
-              <h3 className={`text-sm ${textMutedClass} mb-1`}>TARGET {practiceIdx + 1} of {practiceTargets.length}</h3>
-              <div className={`text-5xl font-bold font-mono bg-gradient-to-r ${themeConfig.gradient} bg-clip-text text-transparent`}>
-                {practiceTargets[practiceIdx]?.target}
-              </div>
-              {practiceMode === 'bob27' && (
-                <div className={`mt-4 text-lg ${bobScore > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                  Score: {bobScore}
+          <div className="p-4 space-y-4 animate-fadeIn">
+            <Card>
+              <div className="text-center py-4">
+                <div className="text-sm opacity-60 mb-1">
+                  Target {practiceIdx + 1} of {practiceTargets.length}
                 </div>
-              )}
-            </div>
+                <div
+                  className="text-6xl font-bold font-mono"
+                  style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+                >
+                  {practiceTargets[practiceIdx]?.target}
+                </div>
+                {practiceMode === 'bob27' && (
+                  <div className={`mt-4 text-xl font-bold ${bobScore > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                    Score: {bobScore}
+                  </div>
+                )}
+              </div>
+
+              {/* Progress dots */}
+              <div className="flex justify-center gap-1 flex-wrap mt-4">
+                {practiceTargets.map((_, i) => (
+                  <div
+                    key={i}
+                    className={`w-2 h-2 rounded-full transition-all ${
+                      i < practiceIdx ? 'bg-emerald-400' : i === practiceIdx ? 'bg-[var(--primary)] scale-150' : 'bg-white/20'
+                    }`}
+                  />
+                ))}
+              </div>
+            </Card>
 
             <div className="grid grid-cols-3 gap-2">
-              <div className={`${cardClass} rounded-xl p-3 text-center`}>
-                <div className="text-2xl font-bold text-emerald-400">{practiceHits}</div>
-                <div className={`text-xs ${textMutedClass}`}>Hits</div>
-              </div>
-              <div className={`${cardClass} rounded-xl p-3 text-center`}>
-                <div className="text-2xl font-bold text-red-400">{practiceMisses}</div>
-                <div className={`text-xs ${textMutedClass}`}>Misses</div>
-              </div>
-              <div className={`${cardClass} rounded-xl p-3 text-center`}>
-                <div className="text-2xl font-bold">
-                  {practiceHits + practiceMisses > 0
-                    ? Math.round(practiceHits / (practiceHits + practiceMisses) * 100)
-                    : 0}%
-                </div>
-                <div className={`text-xs ${textMutedClass}`}>Accuracy</div>
-              </div>
+              <StatBox label="Hits" value={practiceHits} color="text-emerald-400" />
+              <StatBox label="Misses" value={practiceMisses} color="text-red-400" />
+              <StatBox label="Accuracy" value={`${practiceHits + practiceMisses > 0 ? Math.round(practiceHits / (practiceHits + practiceMisses) * 100) : 0}%`} />
             </div>
 
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => practiceResult(false)}
-                className="flex-1 py-4 rounded-xl font-bold text-lg bg-red-500 text-white"
+                className="py-4 rounded-xl font-bold text-lg bg-red-500 text-white active:scale-95 transition-transform"
               >
-                Miss
+                ❌ Miss
               </button>
               <button
                 onClick={() => practiceResult(true)}
-                className={`flex-1 py-4 rounded-xl font-bold text-lg bg-gradient-to-r ${themeConfig.gradient} text-white`}
+                className="py-4 rounded-xl font-bold text-lg text-white active:scale-95 transition-transform"
+                style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))` }}
               >
-                Hit
+                ✅ Hit
               </button>
             </div>
 
             <button
               onClick={() => setPracticeMode(null)}
-              className={`w-full py-3 rounded-xl font-semibold ${cardClass}`}
+              className="w-full py-3 rounded-xl font-semibold bg-white/10 hover:bg-white/20"
             >
               End Practice
             </button>
           </div>
         )}
 
-        {/* Learn Screen */}
+        {/* ========== LEARN SCREEN ========== */}
         {screen === 'learn' && (
-          <div className="space-y-4 animate-fadeIn">
-            <h2 className="font-semibold flex items-center gap-2"><BookOpen size={18} /> Checkout Chart</h2>
+          <div className="p-4 space-y-4 animate-fadeIn">
+            <SectionTitle icon="📊" text="Checkout Chart" />
             <div className="grid grid-cols-3 gap-2">
               {[170, 160, 140, 120, 100, 80, 60, 40, 32, 16, 8, 4].map(n => (
-                <div key={n} className={`${cardClass} rounded-lg p-2 text-center`}>
-                  <div className={`font-bold text-lg bg-gradient-to-r ${themeConfig.gradient} bg-clip-text text-transparent`}>{n}</div>
-                  <div className={`text-xs ${textMutedClass} font-mono`}>{CHECKOUTS[n]}</div>
+                <div key={n} className="bg-white/10 rounded-xl p-2.5 text-center">
+                  <div className="font-bold text-lg" style={{ color: 'var(--primary)' }}>{n}</div>
+                  <div className="text-xs opacity-60 font-mono">{CHECKOUTS[n]}</div>
                 </div>
               ))}
             </div>
-
             <button
               onClick={() => setModal({ type: 'checkouts' })}
-              className={`w-full py-3 rounded-xl font-semibold ${cardClass}`}
+              className="w-full py-3 rounded-xl font-semibold bg-white/10 hover:bg-white/20"
             >
               View All Checkouts
             </button>
 
-            <div className={`${cardClass} rounded-xl p-4 bg-gradient-to-br ${themeConfig.gradient}`}>
+            <div className="bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] rounded-xl p-4">
               <div className="text-xs uppercase opacity-80">Pro Tip</div>
               <div className="font-bold mt-1">Leave Even Numbers</div>
-              <div className="text-sm opacity-90">Best finishes: 40 (D20), 32 (D16), 36 (D18)</div>
+              <div className="text-sm opacity-90">Best finishes: 40 (D20), 32 (D16), 36 (D18).</div>
+            </div>
+
+            <SectionTitle icon="📚" text="Guides" />
+            <div className="space-y-2">
+              {Object.entries(GUIDES).map(([key, guide]) => (
+                <button
+                  key={key}
+                  onClick={() => setModal({ type: 'guide', guide: key })}
+                  className="w-full flex items-center gap-4 bg-white/10 hover:bg-white/20 rounded-xl p-4 text-left transition-all hover:translate-x-1"
+                >
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
+                    style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))` }}
+                  >
+                    {guide.icon}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-bold">{guide.title}</div>
+                  </div>
+                  <ChevronRight className="opacity-40" />
+                </button>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Stats Screen */}
+        {/* ========== STATS SCREEN ========== */}
         {screen === 'stats' && (
-          <div className="space-y-4 animate-fadeIn">
+          <div className="p-4 space-y-4 animate-fadeIn">
             <div className="grid grid-cols-2 gap-2">
-              {[
-                { label: 'Games', value: stats.games, icon: '🎮' },
-                { label: 'Wins', value: stats.wins, icon: '🏆' },
-                { label: '180s', value: stats.s180, icon: '💎' },
-                { label: '140+', value: stats.s140, icon: '🔥' },
-                { label: '100+', value: stats.s100, icon: '💪' },
-                { label: 'Avg', value: stats.totalDarts > 0 ? (stats.totalScore / stats.totalDarts * 3).toFixed(1) : '0', icon: '📊' },
-              ].map(s => (
-                <div key={s.label} className={`${cardClass} rounded-xl p-4 text-center`}>
-                  <div className="text-2xl mb-1">{s.icon}</div>
-                  <div className={`text-2xl font-bold bg-gradient-to-r ${themeConfig.gradient} bg-clip-text text-transparent`}>{s.value}</div>
-                  <div className={`text-xs ${textMutedClass}`}>{s.label}</div>
-                </div>
-              ))}
+              <StatCard icon="🎯" label="3-Dart Avg" value={stats.totalDarts > 0 ? (stats.totalScore / stats.totalDarts * 3).toFixed(1) : '0'} />
+              <StatCard icon="🏆" label="Wins" value={stats.wins} />
+              <StatCard icon="⚡" label="Best Turn" value={stats.best3} />
+              <StatCard icon="✨" label="Checkout %" value={`${stats.checkAttempts > 0 ? Math.round(stats.checkHits / stats.checkAttempts * 100) : 0}%`} />
             </div>
 
-            {stats.history.length > 0 && (
-              <div>
-                <h3 className="font-semibold mb-2">Match History</h3>
-                <div className={`${cardClass} rounded-xl divide-y divide-white/10`}>
-                  {stats.history.slice(0, 10).map((h, i) => (
-                    <div key={i} className="p-3 flex justify-between">
-                      <div>
-                        <span className="mr-2">🏆</span>
-                        <span className="font-semibold">{h.winner}</span>
-                      </div>
-                      <div className={textMutedClass}>
-                        Avg: {h.avg}
-                      </div>
-                    </div>
+            {/* Performance Chart */}
+            {stats.recent.length > 0 && (
+              <Card title="📈 Recent Performance">
+                <div className="flex items-end gap-1 h-16">
+                  {stats.recent.map((val, i) => (
+                    <div
+                      key={i}
+                      className="flex-1 rounded-t transition-all"
+                      style={{
+                        height: `${Math.max(10, val / Math.max(...stats.recent, 60) * 100)}%`,
+                        background: `linear-gradient(to top, var(--primary), var(--secondary))`
+                      }}
+                    />
                   ))}
                 </div>
-              </div>
+              </Card>
             )}
+
+            <Card title="🎉 High Scores">
+              <div className="grid grid-cols-3 gap-2">
+                <StatBox label="180s" value={stats.s180} />
+                <StatBox label="140+" value={stats.s140} />
+                <StatBox label="100+" value={stats.s100} />
+              </div>
+            </Card>
 
             <button
               onClick={() => {
-                if (confirm('Reset all stats?')) {
-                  setStats({ games: 0, wins: 0, totalScore: 0, totalDarts: 0, s180: 0, s140: 0, s100: 0, history: [] });
+                if (confirm('Reset all stats? This cannot be undone.')) {
+                  setStats({
+                    games: 0, wins: 0, totalScore: 0, totalDarts: 0, highest: 0, best3: 0,
+                    checkAttempts: 0, checkHits: 0, s180: 0, s140: 0, s100: 0, recent: [], history: []
+                  });
+                  setAchievements({
+                    first180: false, ton80: false, checkout100: false, games10: false, avg80: false, nineDarter: false
+                  });
                   showToast('Stats reset', 'success');
                 }
               }}
-              className={`w-full py-3 rounded-xl font-semibold ${cardClass} text-red-400`}
+              className="w-full py-3 rounded-xl font-semibold bg-red-500/20 text-red-400 hover:bg-red-500/30"
             >
-              Reset Stats
+              🗑️ Reset Stats
             </button>
           </div>
         )}
       </main>
 
-      {/* Bottom Nav */}
+      {/* Bottom Navigation */}
       {!showBoard && (
-        <nav className={`fixed bottom-0 left-0 right-0 flex ${cardClass} safe-bottom`}>
+        <nav className="fixed bottom-0 left-0 right-0 flex bg-bgMed/80 backdrop-blur-lg border-t border-white/10 safe-bottom">
           {[
             { id: 'home', icon: Home, label: 'Home' },
             { id: 'play', icon: Target, label: 'Play' },
@@ -989,110 +1478,155 @@ export default function App() {
             <button
               key={nav.id}
               onClick={() => { setScreen(nav.id); haptic(); }}
-              className={`flex-1 py-3 flex flex-col items-center gap-1 ${
-                screen === nav.id ? `text-${themeConfig.primary}` : textMutedClass
+              className={`flex-1 py-3 flex flex-col items-center gap-0.5 transition-colors ${
+                screen === nav.id ? 'text-[var(--primary)]' : 'text-white/40'
               }`}
             >
-              <nav.icon size={20} />
-              <span className="text-xs">{nav.label}</span>
+              <nav.icon size={22} />
+              <span className="text-[10px] font-medium">{nav.label}</span>
             </button>
           ))}
         </nav>
       )}
 
+      {/* ========== MODALS ========== */}
+
       {/* Settings Modal */}
       <Modal isOpen={modal?.type === 'settings'} onClose={() => setModal(null)} title="Settings">
         <div className="space-y-4">
-          {/* Background Mode */}
           <div>
-            <h3 className="text-sm text-white/60 mb-2">BACKGROUND</h3>
-            <div className="flex gap-2">
+            <div className="text-xs text-white/50 mb-2 uppercase">Background</div>
+            <div className="grid grid-cols-3 gap-2">
               {Object.entries(BACKGROUNDS).map(([key, bg]) => (
+                <SelectButton key={key} selected={background === key} onClick={() => setBackground(key)}>
+                  {bg.name}
+                </SelectButton>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="text-xs text-white/50 mb-2 uppercase">Theme Color</div>
+            <div className="grid grid-cols-3 gap-2">
+              {Object.entries(THEMES).map(([key, t]) => (
                 <button
                   key={key}
-                  onClick={() => setBackground(key)}
-                  className={`flex-1 py-3 rounded-lg font-semibold flex flex-col items-center gap-1 ${
-                    background === key ? `bg-${themeConfig.primary}` : 'bg-white/10'
-                  }`}
+                  onClick={() => setTheme(key)}
+                  className={`h-12 rounded-xl transition-all ${theme === key ? 'ring-2 ring-white ring-offset-2 ring-offset-[var(--bg-dark)]' : ''}`}
+                  style={{ background: `linear-gradient(135deg, ${t.primary}, ${t.secondary})` }}
                 >
-                  {key === 'dark' ? <Moon size={18} /> : key === 'light' ? <Sun size={18} /> : <Palette size={18} />}
-                  <span className="text-xs">{bg.name}</span>
+                  <span className="text-xs font-semibold text-white/90">{t.name}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Theme Color */}
-          <div>
-            <h3 className="text-sm text-white/60 mb-2">ACCENT COLOR</h3>
-            <div className="grid grid-cols-5 gap-2">
-              {Object.entries(THEMES).map(([key, t]) => (
-                <button
-                  key={key}
-                  onClick={() => setTheme(key)}
-                  className={`aspect-square rounded-lg bg-gradient-to-br ${t.gradient} ${
-                    theme === key ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-800' : ''
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Toggles */}
           <div className="space-y-2">
-            <div className="flex justify-between items-center p-3 bg-white/10 rounded-lg">
-              <span className="font-semibold flex items-center gap-2">
-                {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
-                Sound Effects
-              </span>
-              <button
-                onClick={() => setSoundEnabled(!soundEnabled)}
-                className={`w-12 h-6 rounded-full relative transition-colors ${soundEnabled ? `bg-${themeConfig.primary}` : 'bg-slate-600'}`}
-              >
-                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${soundEnabled ? 'left-7' : 'left-1'}`} />
-              </button>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-white/10 rounded-lg">
-              <span className="font-semibold flex items-center gap-2">
-                <HelpCircle size={18} />
-                Checkout Hints
-              </span>
-              <button
-                onClick={() => setShowHints(!showHints)}
-                className={`w-12 h-6 rounded-full relative transition-colors ${showHints ? `bg-${themeConfig.primary}` : 'bg-slate-600'}`}
-              >
-                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${showHints ? 'left-7' : 'left-1'}`} />
-              </button>
-            </div>
+            <ToggleRow icon={<Volume2 size={18} />} label="Sound Effects" value={soundEnabled} onChange={setSoundEnabled} />
+            <ToggleRow icon={<Vibrate size={18} />} label="Haptic Feedback" value={hapticEnabled} onChange={setHapticEnabled} />
+            <ToggleRow icon={<MessageSquare size={18} />} label="Voice Announcer" value={voiceEnabled} onChange={setVoiceEnabled} />
+            <ToggleRow icon={<HelpCircle size={18} />} label="Checkout Hints" value={hintsEnabled} onChange={setHintsEnabled} />
+            <ToggleRow icon={<ChevronRight size={18} />} label="Auto-Advance" value={autoAdvance} onChange={setAutoAdvance} />
           </div>
 
-          <button onClick={() => setModal(null)} className="w-full py-3 rounded-xl font-semibold bg-white/10">
+          <button onClick={() => setModal(null)} className="w-full py-3 rounded-xl font-semibold bg-white/10 mt-4">
             Close
           </button>
+        </div>
+      </Modal>
+
+      {/* Avatar Picker Modal */}
+      <Modal isOpen={modal?.type === 'avatar'} onClose={() => setModal(null)} title="Choose Avatar">
+        <div className="grid grid-cols-5 gap-3 mb-4">
+          {AVATARS.map(avatar => (
+            <button
+              key={avatar}
+              onClick={() => {
+                if (editingPlayerIdx !== null) {
+                  const newPlayers = [...players];
+                  newPlayers[editingPlayerIdx].avatar = avatar;
+                  setPlayers(newPlayers);
+                }
+              }}
+              className={`aspect-square rounded-xl flex items-center justify-center text-2xl bg-white/10 hover:bg-white/20 transition-all ${
+                editingPlayerIdx !== null && players[editingPlayerIdx]?.avatar === avatar ? 'ring-2 ring-[var(--primary)]' : ''
+              }`}
+            >
+              {avatar}
+            </button>
+          ))}
+        </div>
+        <div className="flex justify-center gap-3 mb-4">
+          {COLORS.map(color => (
+            <button
+              key={color}
+              onClick={() => {
+                if (editingPlayerIdx !== null) {
+                  const newPlayers = [...players];
+                  newPlayers[editingPlayerIdx].color = color;
+                  setPlayers(newPlayers);
+                }
+              }}
+              className={`w-10 h-10 rounded-full transition-all ${
+                editingPlayerIdx !== null && players[editingPlayerIdx]?.color === color ? 'ring-2 ring-white ring-offset-2 ring-offset-[var(--bg-dark)]' : ''
+              }`}
+              style={{ background: color }}
+            />
+          ))}
+        </div>
+        <button onClick={() => setModal(null)} className="w-full py-3 rounded-xl font-semibold bg-white/10">
+          Done
+        </button>
+      </Modal>
+
+      {/* Choose First Player Modal */}
+      <Modal isOpen={modal?.type === 'chooseFirst'} onClose={() => setModal(null)} title="Who Goes First?">
+        <div className="space-y-2">
+          {players.slice(0, numPlayers).map((p, i) => (
+            <button
+              key={i}
+              onClick={() => { setFirstPlayer(i); setCoinResult(i); setModal(null); }}
+              className="w-full flex items-center gap-3 bg-white/10 hover:bg-white/20 rounded-xl p-3"
+            >
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl" style={{ background: p.color }}>
+                {p.avatar}
+              </div>
+              <span className="font-semibold">{p.name}</span>
+            </button>
+          ))}
         </div>
       </Modal>
 
       {/* Winner Modal */}
       <Modal isOpen={modal?.type === 'winner'} onClose={() => setModal(null)}>
         <div className="text-center py-4">
-          <div className="text-6xl animate-bounce-custom">🏆</div>
-          <div className={`text-2xl font-bold mt-4 bg-gradient-to-r ${themeConfig.gradient} bg-clip-text text-transparent`}>
+          <div className="text-6xl animate-bounce mb-4">🏆</div>
+          <div
+            className="text-2xl font-bold"
+            style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+          >
             {modal?.winner?.name}
           </div>
-          <div className="text-white/60 mt-2">
-            Wins the match!
+          <div className="text-white/60 mb-4">Wins the match!</div>
+          <div className="space-y-1 text-sm text-white/80 mb-6">
+            <div>Average: <span className="font-bold">{modal?.stats?.avg}</span></div>
+            <div>First 9 Avg: <span className="font-bold">{modal?.stats?.first9Avg}</span></div>
+            <div>Checkout: <span className="font-bold">{modal?.stats?.checkPct}%</span></div>
+            <div>High Turn: <span className="font-bold">{modal?.stats?.highTurn}</span></div>
           </div>
-          <div className="mt-4 space-y-1 text-sm text-white/80">
-            <div>Average: {modal?.stats?.avg}</div>
-            <div>Darts: {modal?.stats?.darts}</div>
-            <div>High Turn: {modal?.stats?.highTurn}</div>
-          </div>
-          <div className="mt-6 space-y-2">
+          <div className="space-y-2">
+            <button
+              onClick={shareResult}
+              className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2"
+              style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))` }}
+            >
+              <Share2 size={18} /> Share Result
+            </button>
             <button
               onClick={() => { setModal(null); startGame(); }}
-              className={`w-full py-3 rounded-xl font-bold bg-gradient-to-r ${themeConfig.gradient}`}
+              className="w-full py-3 rounded-xl font-semibold bg-white/10"
             >
-              Rematch
+              🔄 Rematch
             </button>
             <button
               onClick={() => { setModal(null); setScreen('home'); }}
@@ -1104,20 +1638,118 @@ export default function App() {
         </div>
       </Modal>
 
-      {/* All Checkouts Modal */}
+      {/* History Modal */}
+      <Modal isOpen={modal?.type === 'history'} onClose={() => setModal(null)} title="Match History">
+        {stats.history.length === 0 ? (
+          <div className="text-center py-8 text-white/40">No matches yet</div>
+        ) : (
+          <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+            {stats.history.map((h, i) => (
+              <div key={i} className="flex justify-between items-center bg-white/5 rounded-xl p-3">
+                <div>
+                  <div className="font-semibold">🏆 {h.winner}</div>
+                  <div className="text-xs text-white/40">{new Date(h.date).toLocaleDateString()}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[var(--primary)] font-mono">Avg: {h.avg}</div>
+                  {h.first9 && <div className="text-xs text-white/40">First 9: {h.first9}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <button onClick={() => setModal(null)} className="w-full py-3 rounded-xl font-semibold bg-white/10 mt-4">
+          Close
+        </button>
+      </Modal>
+
+      {/* Checkouts Modal */}
       <Modal isOpen={modal?.type === 'checkouts'} onClose={() => setModal(null)} title="All Checkouts">
-        <div className="grid grid-cols-3 gap-2 max-h-[60vh] overflow-y-auto">
+        <div className="grid grid-cols-3 gap-2 max-h-[55vh] overflow-y-auto">
           {Object.entries(CHECKOUTS).sort((a, b) => parseInt(b[0]) - parseInt(a[0])).map(([score, route]) => (
-            <div key={score} className="bg-white/10 rounded-lg p-2 text-center">
-              <div className={`font-bold text-lg bg-gradient-to-r ${themeConfig.gradient} bg-clip-text text-transparent`}>{score}</div>
-              <div className="text-xs text-white/60 font-mono">{route}</div>
+            <div key={score} className="bg-white/5 rounded-lg p-2 text-center">
+              <div className="font-bold" style={{ color: 'var(--primary)' }}>{score}</div>
+              <div className="text-xs text-white/50 font-mono">{route}</div>
             </div>
           ))}
         </div>
-        <button onClick={() => setModal(null)} className="w-full mt-4 py-3 rounded-xl font-semibold bg-white/10">
+        <button onClick={() => setModal(null)} className="w-full py-3 rounded-xl font-semibold bg-white/10 mt-4">
+          Close
+        </button>
+      </Modal>
+
+      {/* Guide Modal */}
+      <Modal isOpen={modal?.type === 'guide'} onClose={() => setModal(null)} title={modal?.guide ? GUIDES[modal.guide].title : ''}>
+        {modal?.guide && (
+          <div className="space-y-4">
+            {GUIDES[modal.guide].content.map((section, i) => (
+              <div key={i}>
+                <div className="font-bold text-[var(--primary)]">{section.h}</div>
+                <div className="text-white/70 text-sm">{section.p}</div>
+              </div>
+            ))}
+          </div>
+        )}
+        <button onClick={() => setModal(null)} className="w-full py-3 rounded-xl font-semibold bg-white/10 mt-4">
           Close
         </button>
       </Modal>
     </div>
   );
 }
+
+// ============ HELPER COMPONENTS ============
+
+const SectionTitle = ({ icon, text }) => (
+  <h2 className="font-bold flex items-center gap-2 mb-2">
+    <span>{icon}</span> {text}
+  </h2>
+);
+
+const Card = ({ title, children }) => (
+  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+    {title && <div className="font-bold mb-3 flex items-center gap-2">{title}</div>}
+    {children}
+  </div>
+);
+
+const StatBox = ({ label, value, color = '' }) => (
+  <div className="bg-white/10 rounded-xl p-3 text-center">
+    <div className={`text-2xl font-bold font-mono ${color}`} style={!color ? { color: 'var(--primary)' } : {}}>
+      {value}
+    </div>
+    <div className="text-xs text-white/50">{label}</div>
+  </div>
+);
+
+const StatCard = ({ icon, label, value }) => (
+  <div className="bg-white/10 rounded-xl p-4 text-center">
+    <div className="text-2xl mb-1">{icon}</div>
+    <div className="text-2xl font-bold font-mono" style={{ color: 'var(--primary)' }}>{value}</div>
+    <div className="text-xs text-white/50">{label}</div>
+  </div>
+);
+
+const SelectButton = ({ selected, onClick, children }) => (
+  <button
+    onClick={onClick}
+    className={`py-2.5 rounded-xl font-semibold transition-all ${
+      selected ? 'text-white' : 'bg-white/10 hover:bg-white/20'
+    }`}
+    style={selected ? { background: `linear-gradient(135deg, var(--primary), var(--secondary))` } : {}}
+  >
+    {children}
+  </button>
+);
+
+const ToggleRow = ({ icon, label, value, onChange }) => (
+  <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
+    <span className="font-semibold flex items-center gap-2">{icon} {label}</span>
+    <button
+      onClick={() => onChange(!value)}
+      className={`w-12 h-6 rounded-full relative transition-colors ${value ? 'bg-[var(--primary)]' : 'bg-white/20'}`}
+    >
+      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${value ? 'left-7' : 'left-1'}`} />
+    </button>
+  </div>
+);
