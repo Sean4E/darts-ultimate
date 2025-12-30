@@ -978,6 +978,35 @@ export default function App() {
     }
   }, [gameActive, darts, currentPlayer, playerStats, sound, haptic, autoAdvance]);
 
+  const checkHighScore = useCallback((total) => {
+    let newStats = { ...stats };
+    let newAchievements = { ...achievements };
+
+    if (total > newStats.best3) newStats.best3 = total;
+
+    if (total === 180) {
+      newStats.s180++;
+      newAchievements.first180 = true;
+      announce('180!');
+      celebrate();
+      showToast('ONE HUNDRED AND EIGHTY! 🎯', 'celebrate');
+    } else if (total >= 160) {
+      newStats.s140++;
+      newAchievements.ton80 = true;
+      announce(total.toString());
+      showToast(`${total}! 🔥`, 'success');
+    } else if (total >= 140) {
+      newStats.s140++;
+      announce(total.toString());
+      showToast(`${total}! 🔥`, 'success');
+    } else if (total >= 100) {
+      newStats.s100++;
+    }
+
+    setStats(newStats);
+    setAchievements(newAchievements);
+  }, [stats, achievements, announce, celebrate, showToast]);
+
   // Record a complete 3-dart turn at once (for keypad/quick modes)
   const recordTurn = useCallback((turnScore, isCheckout = false) => {
     if (!gameActive) return;
@@ -1021,35 +1050,6 @@ export default function App() {
       setTimeout(() => nextTurn(), 500);
     }
   }, [gameActive, currentPlayer, playerStats, sound, haptic, autoAdvance, checkHighScore]);
-
-  const checkHighScore = useCallback((total) => {
-    let newStats = { ...stats };
-    let newAchievements = { ...achievements };
-
-    if (total > newStats.best3) newStats.best3 = total;
-
-    if (total === 180) {
-      newStats.s180++;
-      newAchievements.first180 = true;
-      announce('180!');
-      celebrate();
-      showToast('ONE HUNDRED AND EIGHTY! 🎯', 'celebrate');
-    } else if (total >= 160) {
-      newStats.s140++;
-      newAchievements.ton80 = true;
-      announce(total.toString());
-      showToast(`${total}! 🔥`, 'success');
-    } else if (total >= 140) {
-      newStats.s140++;
-      announce(total.toString());
-      showToast(`${total}! 🔥`, 'success');
-    } else if (total >= 100) {
-      newStats.s100++;
-    }
-
-    setStats(newStats);
-    setAchievements(newAchievements);
-  }, [stats, achievements, announce, celebrate, showToast]);
 
   const nextTurn = useCallback(() => {
     if (!gameActive) return;
