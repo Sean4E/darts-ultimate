@@ -22,7 +22,22 @@ const BACKGROUNDS = {
   gradient: { name: 'Gradient', class: 'bg-gradient' },
 };
 
-const AVATARS = ['😎','🎯','🔥','⚡','🎮','👑','🦊','🐺','🦁','🐯','🦅','🐲','💎','🌟','🎪','🎭','🏆','💪','🎲','🍀'];
+const AVATARS = [
+  // Sports & Games
+  '🎯','🎱','🎳','🎮','🎲','🃏','♠️','♣️','♥️','♦️','🏆','🥇','🥈','🥉','🏅','🎖️',
+  // Cool & Fire
+  '😎','🔥','⚡','💥','✨','🌟','💫','⭐','🌈','💎','💰','👑','🎩','🕶️',
+  // Animals
+  '🦊','🐺','🦁','🐯','🦅','🐲','🦄','🐉','🦈','🐍','🦂','🐝','🦋','🐬','🦏','🐘',
+  // People & Faces
+  '🤴','👸','🧙','🧛','🤖','👽','💀','☠️','👹','👺','🤡','👻','🎃','😈','👿',
+  // Objects & Symbols
+  '💪','🤘','👊','✌️','🤙','👋','🖖','💣','🗡️','🛡️','⚔️','🏹','🔱','⚜️',
+  // Food & Nature
+  '🍀','🌵','🌴','🎄','🌺','🌻','🍎','🍊','🍋','🍒','🍇','🥑','🌶️','🍕','🍔','🍺',
+  // Misc
+  '🎪','🎭','🎨','🎬','🎤','🎸','🥁','🎹','🚀','🛸','⚓','🔮','💡','🔒','⚙️','🧲'
+];
 const COLORS = ['#8B5CF6','#EC4899','#06B6D4','#F59E0B','#10B981','#EF4444','#3B82F6','#F472B6','#84CC16','#14B8A6'];
 
 const TIPS = [
@@ -135,55 +150,117 @@ const speak = (text) => {
 
 // ============ COMPONENTS ============
 
-// Interactive Dartboard SVG with mobile-friendly segment selector
+// Interactive Dartboard SVG with magnifier for precision
 const Dartboard = ({ onHit, size = 300, numberSize = 14 }) => {
   const nums = [20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
   const cx = 200, cy = 200;
-  const [selectedNumber, setSelectedNumber] = useState(null);
+  const svgRef = React.useRef(null);
+  const [magnifier, setMagnifier] = useState({ active: false, x: 0, y: 0, svgX: 0, svgY: 0 });
   const [isMobile] = useState(() => 'ontouchstart' in window || navigator.maxTouchPoints > 0);
+  const [ctrlPressed, setCtrlPressed] = useState(false);
+  const longPressTimer = React.useRef(null);
 
-  // Handle segment tap - on mobile show selector, on desktop hit directly
-  const handleSegmentTap = (n, mult) => {
-    if (isMobile && mult !== 2) {
-      // On mobile, tapping single area shows the segment selector for that number
-      setSelectedNumber(n);
-    } else {
-      // Desktop or already on double/treble - hit directly
-      onHit(n, mult);
+  // Desktop: Listen for Ctrl key
+  useEffect(() => {
+    const handleKeyDown = (e) => { if (e.key === 'Control') setCtrlPressed(true); };
+    const handleKeyUp = (e) => { if (e.key === 'Control') { setCtrlPressed(false); setMagnifier(m => ({ ...m, active: false })); } };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
+  // Get SVG coordinates from mouse/touch position
+  const getSvgCoords = (clientX, clientY) => {
+    if (!svgRef.current) return { x: 0, y: 0 };
+    const rect = svgRef.current.getBoundingClientRect();
+    const x = ((clientX - rect.left) / rect.width) * 400;
+    const y = ((clientY - rect.top) / rect.height) * 400;
+    return { x, y };
+  };
+
+  // Mouse move for desktop magnifier
+  const handleMouseMove = (e) => {
+    if (ctrlPressed) {
+      const { x, y } = getSvgCoords(e.clientX, e.clientY);
+      setMagnifier({ active: true, x: e.clientX, y: e.clientY, svgX: x, svgY: y });
     }
   };
 
-  // Handle bull tap
-  const handleBullTap = (score, isDouble) => {
+  // Touch handlers for mobile magnifier
+  const handleTouchStart = (e) => {
     if (isMobile) {
-      setSelectedNumber('bull');
-    } else {
-      onHit(score, isDouble ? 2 : 1);
+      const touch = e.touches[0];
+      longPressTimer.current = setTimeout(() => {
+        const { x, y } = getSvgCoords(touch.clientX, touch.clientY);
+        setMagnifier({ active: true, x: touch.clientX, y: touch.clientY - 80, svgX: x, svgY: y });
+      }, 300);
     }
   };
 
-  const segment = (ro, ri, sa, ea, fill, n, mult, isHighlight = false) => {
+  const handleTouchMove = (e) => {
+    if (magnifier.active && isMobile) {
+      const touch = e.touches[0];
+      const { x, y } = getSvgCoords(touch.clientX, touch.clientY);
+      setMagnifier({ active: true, x: touch.clientX, y: touch.clientY - 80, svgX: x, svgY: y });
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    if (magnifier.active) {
+      // Determine what was hit based on magnifier position
+      const { svgX, svgY } = magnifier;
+      const hitResult = getHitFromCoords(svgX, svgY);
+      if (hitResult) {
+        onHit(hitResult.number, hitResult.multiplier);
+      }
+      setMagnifier({ active: false, x: 0, y: 0, svgX: 0, svgY: 0 });
+      e.preventDefault();
+    }
+  };
+
+  // Determine what segment is at given SVG coordinates
+  const getHitFromCoords = (x, y) => {
+    const dx = x - cx, dy = y - cy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist <= 16) return { number: 50, multiplier: 2 }; // Bull
+    if (dist <= 40) return { number: 25, multiplier: 1 }; // 25
+    if (dist > 180) return null; // Outside board
+
+    // Calculate angle and find segment
+    let angle = Math.atan2(dy, dx) * 180 / Math.PI + 99;
+    if (angle < 0) angle += 360;
+    const segmentIndex = Math.floor(angle / 18) % 20;
+    const number = nums[segmentIndex];
+
+    // Determine multiplier by distance
+    let multiplier = 1;
+    if (dist >= 170 && dist <= 180) multiplier = 2; // Double
+    else if (dist >= 99 && dist <= 107) multiplier = 3; // Triple
+
+    return { number, multiplier };
+  };
+
+  const segment = (ro, ri, sa, ea, fill, n, mult) => {
     const x1o = cx + Math.cos(sa) * ro, y1o = cy + Math.sin(sa) * ro;
     const x2o = cx + Math.cos(ea) * ro, y2o = cy + Math.sin(ea) * ro;
     const x1i = cx + Math.cos(ea) * ri, y1i = cy + Math.sin(ea) * ri;
     const x2i = cx + Math.cos(sa) * ri, y2i = cy + Math.sin(sa) * ri;
     const d = `M${x1o} ${y1o} A${ro} ${ro} 0 0 1 ${x2o} ${y2o} L${x1i} ${y1i} A${ri} ${ri} 0 0 0 ${x2i} ${y2i}Z`;
 
-    // CSS class for hover scaling on desktop (doubles and trebles only)
-    const hoverClass = (mult === 2 || mult === 3)
-      ? 'dartboard-segment-highlight cursor-pointer'
-      : 'cursor-pointer';
-
     return (
       <path
         key={`${n}-${mult}-${ro}`}
         d={d}
-        fill={isHighlight ? '#FFD700' : fill}
-        stroke={isHighlight ? '#FFF' : '#333'}
-        strokeWidth={isHighlight ? '2' : '0.5'}
-        className={`${hoverClass} transition-all duration-100 active:brightness-150`}
-        onClick={() => handleSegmentTap(n, mult)}
-        style={{ transformOrigin: `${cx}px ${cy}px` }}
+        fill={fill}
+        stroke="#333"
+        strokeWidth="0.5"
+        className="cursor-pointer transition-all duration-100 hover:brightness-125 active:brightness-150"
+        onClick={() => !magnifier.active && onHit(n, mult)}
       />
     );
   };
@@ -192,33 +269,48 @@ const Dartboard = ({ onHit, size = 300, numberSize = 14 }) => {
 
   return (
     <div className="relative">
-      <svg viewBox="0 0 400 400" style={{ width: size, height: size, filter: 'drop-shadow(0 8px 32px rgba(0,0,0,0.5))' }}>
+      {/* Magnifier hint */}
+      {!isMobile && (
+        <div className="absolute -top-6 left-0 right-0 text-center text-xs text-white/40">
+          Hold Ctrl for magnifier
+        </div>
+      )}
+
+      <svg
+        ref={svgRef}
+        viewBox="0 0 400 400"
+        style={{ width: size, height: size, filter: 'drop-shadow(0 8px 32px rgba(0,0,0,0.5))' }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setMagnifier(m => ({ ...m, active: false }))}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <circle cx={cx} cy={cy} r="180" fill="#1a1a1a" />
         {nums.map((n, i) => {
           const sa = (i * 18 - 99) * Math.PI / 180;
           const ea = ((i + 1) * 18 - 99) * Math.PI / 180;
           const even = i % 2 === 0;
-          const isSelected = selectedNumber === n;
           return (
             <React.Fragment key={n}>
-              {segment(180, 170, sa, ea, even ? '#e63946' : '#2a9d8f', n, 2, isSelected)}
-              {segment(170, 107, sa, ea, even ? '#1a1a1a' : '#f5e6c8', n, 1, isSelected)}
-              {segment(107, 99, sa, ea, even ? '#e63946' : '#2a9d8f', n, 3, isSelected)}
-              {segment(99, 40, sa, ea, even ? '#1a1a1a' : '#f5e6c8', n, 1, isSelected)}
+              {segment(180, 170, sa, ea, even ? '#e63946' : '#2a9d8f', n, 2)}
+              {segment(170, 107, sa, ea, even ? '#1a1a1a' : '#f5e6c8', n, 1)}
+              {segment(107, 99, sa, ea, even ? '#e63946' : '#2a9d8f', n, 3)}
+              {segment(99, 40, sa, ea, even ? '#1a1a1a' : '#f5e6c8', n, 1)}
             </React.Fragment>
           );
         })}
         <circle
           cx={cx} cy={cy} r="40"
-          fill={selectedNumber === 'bull' ? '#FFD700' : '#2a9d8f'}
-          className="cursor-pointer transition-all duration-100 active:brightness-150"
-          onClick={() => handleBullTap(25, false)}
+          fill="#2a9d8f"
+          className="cursor-pointer transition-all duration-100 hover:brightness-125 active:brightness-150"
+          onClick={() => !magnifier.active && onHit(25, 1)}
         />
         <circle
           cx={cx} cy={cy} r="16"
-          fill={selectedNumber === 'bull' ? '#FFF' : '#e63946'}
-          className="cursor-pointer transition-all duration-100 active:brightness-150"
-          onClick={() => handleBullTap(50, true)}
+          fill="#e63946"
+          className="cursor-pointer transition-all duration-100 hover:brightness-125 active:brightness-150"
+          onClick={() => !magnifier.active && onHit(50, 2)}
         />
         {nums.map((n, i) => {
           const a = (i * 18 - 90) * Math.PI / 180;
@@ -240,75 +332,74 @@ const Dartboard = ({ onHit, size = 300, numberSize = 14 }) => {
             </text>
           );
         })}
+
+        {/* Crosshair when magnifying */}
+        {magnifier.active && (
+          <>
+            <line x1={magnifier.svgX - 15} y1={magnifier.svgY} x2={magnifier.svgX + 15} y2={magnifier.svgY} stroke="white" strokeWidth="2" />
+            <line x1={magnifier.svgX} y1={magnifier.svgY - 15} x2={magnifier.svgX} y2={magnifier.svgY + 15} stroke="white" strokeWidth="2" />
+            <circle cx={magnifier.svgX} cy={magnifier.svgY} r="5" fill="var(--primary)" />
+          </>
+        )}
       </svg>
 
-      {/* Mobile Segment Selector Popup */}
-      {selectedNumber !== null && (
+      {/* Magnifier Loupe */}
+      {magnifier.active && (
         <div
-          className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-10"
-          onClick={() => setSelectedNumber(null)}
+          className="fixed pointer-events-none z-50 rounded-full border-4 border-white/80 shadow-2xl overflow-hidden"
+          style={{
+            width: 140,
+            height: 140,
+            left: magnifier.x - 70,
+            top: magnifier.y - 70,
+            background: '#1a1a1a',
+          }}
         >
-          <div
-            className="bg-[var(--bg-dark)] rounded-2xl p-4 shadow-2xl border border-white/20 animate-fadeIn"
-            onClick={e => e.stopPropagation()}
+          <svg
+            viewBox={`${magnifier.svgX - 35} ${magnifier.svgY - 35} 70 70`}
+            style={{ width: '100%', height: '100%' }}
           >
-            {selectedNumber === 'bull' ? (
-              <>
-                <div className="text-center mb-3">
-                  <span className="text-2xl font-bold">BULL</span>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => { onHit(25, 1); setSelectedNumber(null); }}
-                    className="flex-1 py-4 px-6 rounded-xl font-bold text-xl bg-amber-600 text-white active:scale-95 transition-transform"
-                  >
-                    25
-                  </button>
-                  <button
-                    onClick={() => { onHit(50, 2); setSelectedNumber(null); }}
-                    className="flex-1 py-4 px-6 rounded-xl font-bold text-xl bg-amber-500 text-white active:scale-95 transition-transform"
-                  >
-                    BULL 50
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="text-center mb-3">
-                  <span className="text-3xl font-bold">{selectedNumber}</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    onClick={() => { onHit(selectedNumber, 1); setSelectedNumber(null); }}
-                    className="py-4 px-5 rounded-xl font-bold text-lg bg-blue-500 text-white active:scale-95 transition-transform"
-                  >
-                    <div className="text-xs opacity-70">Single</div>
-                    <div>{selectedNumber}</div>
-                  </button>
-                  <button
-                    onClick={() => { onHit(selectedNumber, 2); setSelectedNumber(null); }}
-                    className="py-4 px-5 rounded-xl font-bold text-lg bg-green-500 text-white active:scale-95 transition-transform"
-                  >
-                    <div className="text-xs opacity-70">Double</div>
-                    <div>{selectedNumber * 2}</div>
-                  </button>
-                  <button
-                    onClick={() => { onHit(selectedNumber, 3); setSelectedNumber(null); }}
-                    className="py-4 px-5 rounded-xl font-bold text-lg bg-red-500 text-white active:scale-95 transition-transform"
-                  >
-                    <div className="text-xs opacity-70">Triple</div>
-                    <div>{selectedNumber * 3}</div>
-                  </button>
-                </div>
-              </>
-            )}
-            <button
-              onClick={() => setSelectedNumber(null)}
-              className="w-full mt-3 py-2 rounded-xl bg-white/10 text-white/60 font-semibold"
-            >
-              Cancel
-            </button>
-          </div>
+            <circle cx={cx} cy={cy} r="180" fill="#1a1a1a" />
+            {nums.map((n, i) => {
+              const sa = (i * 18 - 99) * Math.PI / 180;
+              const ea = ((i + 1) * 18 - 99) * Math.PI / 180;
+              const even = i % 2 === 0;
+              return (
+                <React.Fragment key={n}>
+                  {segment(180, 170, sa, ea, even ? '#e63946' : '#2a9d8f', n, 2)}
+                  {segment(170, 107, sa, ea, even ? '#1a1a1a' : '#f5e6c8', n, 1)}
+                  {segment(107, 99, sa, ea, even ? '#e63946' : '#2a9d8f', n, 3)}
+                  {segment(99, 40, sa, ea, even ? '#1a1a1a' : '#f5e6c8', n, 1)}
+                </React.Fragment>
+              );
+            })}
+            <circle cx={cx} cy={cy} r="40" fill="#2a9d8f" />
+            <circle cx={cx} cy={cy} r="16" fill="#e63946" />
+            {/* Crosshair in magnifier */}
+            <line x1={magnifier.svgX - 10} y1={magnifier.svgY} x2={magnifier.svgX + 10} y2={magnifier.svgY} stroke="white" strokeWidth="1.5" />
+            <line x1={magnifier.svgX} y1={magnifier.svgY - 10} x2={magnifier.svgX} y2={magnifier.svgY + 10} stroke="white" strokeWidth="1.5" />
+            <circle cx={magnifier.svgX} cy={magnifier.svgY} r="3" fill="var(--primary)" stroke="white" strokeWidth="1" />
+          </svg>
+          {/* What will be hit */}
+          {(() => {
+            const hit = getHitFromCoords(magnifier.svgX, magnifier.svgY);
+            if (!hit) return null;
+            const label = hit.number === 50 ? 'BULL' : hit.number === 25 ? '25' :
+              `${hit.multiplier === 1 ? 'S' : hit.multiplier === 2 ? 'D' : 'T'}${hit.number}`;
+            const score = hit.number === 50 ? 50 : hit.number === 25 ? 25 : hit.number * hit.multiplier;
+            return (
+              <div className="absolute bottom-1 left-0 right-0 text-center">
+                <span className="bg-black/80 px-2 py-0.5 rounded text-sm font-bold">{label} = {score}</span>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* Mobile hint */}
+      {isMobile && (
+        <div className="absolute -bottom-6 left-0 right-0 text-center text-xs text-white/40">
+          Press & hold for magnifier
         </div>
       )}
     </div>
@@ -2050,7 +2141,7 @@ export default function App() {
 
       {/* Avatar Picker Modal */}
       <Modal isOpen={modal?.type === 'avatar'} onClose={() => setModal(null)} title="Choose Avatar">
-        <div className="grid grid-cols-5 gap-3 mb-4">
+        <div className="grid grid-cols-6 gap-2 mb-4 max-h-[60vh] overflow-y-auto p-1">
           {AVATARS.map(avatar => (
             <button
               key={avatar}
@@ -2061,8 +2152,8 @@ export default function App() {
                   setPlayers(newPlayers);
                 }
               }}
-              className={`aspect-square rounded-xl flex items-center justify-center text-2xl bg-white/10 hover:bg-white/20 transition-all ${
-                editingPlayerIdx !== null && players[editingPlayerIdx]?.avatar === avatar ? 'ring-2 ring-[var(--primary)]' : ''
+              className={`aspect-square rounded-xl flex items-center justify-center text-4xl bg-white/10 hover:bg-white/20 hover:scale-110 transition-all ${
+                editingPlayerIdx !== null && players[editingPlayerIdx]?.avatar === avatar ? 'ring-2 ring-[var(--primary)] bg-white/20' : ''
               }`}
             >
               {avatar}

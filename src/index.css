@@ -459,17 +459,3 @@ input[type="range"]::-moz-range-track {
   background: rgba(255,255,255,0.2);
 }
 
-/* Dartboard segment hover effects - desktop only */
-@media (hover: hover) and (pointer: fine) {
-  .dartboard-segment-highlight:hover {
-    filter: brightness(1.4) drop-shadow(0 0 8px rgba(255,255,255,0.5));
-    transform: scale(1.08);
-    z-index: 10;
-  }
-}
-
-/* Dartboard segment active state - all devices */
-.dartboard-segment-highlight:active {
-  filter: brightness(1.6);
-  transform: scale(0.98);
-}
