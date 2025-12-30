@@ -1007,6 +1007,116 @@ export default function App() {
     setAchievements(newAchievements);
   }, [stats, achievements, announce, celebrate, showToast]);
 
+  // Match won handler - must be defined before legWon
+  const matchWon = useCallback((winner) => {
+    setGameActive(false);
+    setShowBoard(false);
+
+    const ps = playerStats[winner];
+    const avg = ps.darts > 0 ? (ps.score / ps.darts * 3).toFixed(1) : '0';
+    const first9Avg = ps.first9.length > 0 ? (ps.first9.reduce((a, b) => a + b, 0) / ps.first9.length * 3).toFixed(1) : '0';
+    const checkPct = ps.checkAttempts > 0 ? Math.round(ps.checkHits / ps.checkAttempts * 100) : 0;
+
+    // Update global stats
+    setStats(s => {
+      const newStats = {
+        ...s,
+        games: s.games + 1,
+        wins: (winner === 0 || numPlayers === 1) ? s.wins + 1 : s.wins,
+        totalScore: s.totalScore + ps.score,
+        totalDarts: s.totalDarts + ps.darts,
+        recent: [...s.recent.slice(-9), Math.round(parseFloat(avg))],
+        history: [{
+          date: new Date().toISOString(),
+          players: players.slice(0, numPlayers).map(p => p.name),
+          winner: players[winner].name,
+          avg,
+          first9: first9Avg
+        }, ...s.history.slice(0, 49)]
+      };
+      return newStats;
+    });
+
+    // Check achievements
+    setAchievements(a => {
+      const newA = { ...a };
+      if (stats.games + 1 >= 10) newA.games10 = true;
+      if (parseFloat(avg) >= 80) newA.avg80 = true;
+      return newA;
+    });
+
+    // Show winner modal
+    setModal({
+      type: 'winner',
+      winner: players[winner],
+      stats: { avg, first9Avg, checkPct, darts: ps.darts, highTurn: ps.highTurn, legDarts: ps.legDarts }
+    });
+
+    sound('win');
+    celebrate();
+  }, [playerStats, numPlayers, players, stats, sound, celebrate]);
+
+  // Leg won handler - must be defined before submitTurn and nextTurn
+  const legWon = useCallback((winner) => {
+    const newLegWins = [...legWins];
+    newLegWins[winner]++;
+    setLegWins(newLegWins);
+
+    const neededLegs = Math.ceil(legs / 2);
+
+    if (sets > 0) {
+      // Playing with sets
+      if (newLegWins[winner] >= neededLegs) {
+        // Set won
+        const newSetWins = [...setWins];
+        newSetWins[winner]++;
+        setSetWins(newSetWins);
+
+        const neededSets = Math.ceil(sets / 2);
+        if (newSetWins[winner] >= neededSets) {
+          matchWon(winner);
+          return;
+        }
+
+        // Reset legs for new set
+        setLegWins(Array(numPlayers).fill(0));
+        setCurrentSet(s => s + 1);
+        showToast(`${players[winner].name} wins the set! 🎉`, 'success');
+      } else {
+        setCurrentLeg(l => l + 1);
+        showToast(`${players[winner].name} wins the leg! 🎉`, 'success');
+      }
+    } else {
+      // Playing legs only
+      if (newLegWins[winner] >= neededLegs) {
+        matchWon(winner);
+        return;
+      }
+      setCurrentLeg(l => l + 1);
+      showToast(`${players[winner].name} wins the leg! 🎉`, 'success');
+    }
+
+    // Reset for new leg
+    const startScore = parseInt(gameType) || 501;
+    setScores(Array(numPlayers).fill(startScore));
+    const newStats = [...playerStats];
+    for (let i = 0; i < numPlayers; i++) {
+      // Check for 9 darter
+      if (i === winner && newStats[i].legDarts === 9 && gameType === '501') {
+        setAchievements(a => ({ ...a, nineDarter: true }));
+        showToast('NINE DARTER! ⭐', 'celebrate');
+        celebrate();
+      }
+      newStats[i].legDarts = 0;
+      newStats[i].legScore = 0;
+      newStats[i].first9 = [];
+    }
+    setPlayerStats(newStats);
+    setCurrentPlayer((currentPlayer + 1) % numPlayers);
+    setDarts([]);
+    setMultiplier(1);
+  }, [legWins, setWins, sets, legs, numPlayers, gameType, players, playerStats, currentPlayer, showToast, celebrate, matchWon]);
+
   // Submit a complete 3-dart turn at once (for keypad/quick modes)
   // This processes the turn immediately without using the darts array
   const submitTurn = useCallback((turnScore, isCheckout = false) => {
@@ -1164,114 +1274,6 @@ export default function App() {
     setMultiplier(1);
     sound('next');
   }, [gameActive, darts, currentPlayer, scores, playerStats, checkoutMode, numPlayers, showToast, sound]);
-
-  const legWon = useCallback((winner) => {
-    const newLegWins = [...legWins];
-    newLegWins[winner]++;
-    setLegWins(newLegWins);
-
-    const neededLegs = Math.ceil(legs / 2);
-
-    if (sets > 0) {
-      // Playing with sets
-      if (newLegWins[winner] >= neededLegs) {
-        // Set won
-        const newSetWins = [...setWins];
-        newSetWins[winner]++;
-        setSetWins(newSetWins);
-
-        const neededSets = Math.ceil(sets / 2);
-        if (newSetWins[winner] >= neededSets) {
-          matchWon(winner);
-          return;
-        }
-
-        // Reset legs for new set
-        setLegWins(Array(numPlayers).fill(0));
-        setCurrentSet(s => s + 1);
-        showToast(`${players[winner].name} wins the set! 🎉`, 'success');
-      } else {
-        setCurrentLeg(l => l + 1);
-        showToast(`${players[winner].name} wins the leg! 🎉`, 'success');
-      }
-    } else {
-      // Playing legs only
-      if (newLegWins[winner] >= neededLegs) {
-        matchWon(winner);
-        return;
-      }
-      setCurrentLeg(l => l + 1);
-      showToast(`${players[winner].name} wins the leg! 🎉`, 'success');
-    }
-
-    // Reset for new leg
-    const startScore = parseInt(gameType) || 501;
-    setScores(Array(numPlayers).fill(startScore));
-    const newStats = [...playerStats];
-    for (let i = 0; i < numPlayers; i++) {
-      // Check for 9 darter
-      if (i === winner && newStats[i].legDarts === 9 && gameType === '501') {
-        setAchievements(a => ({ ...a, nineDarter: true }));
-        showToast('NINE DARTER! ⭐', 'celebrate');
-        celebrate();
-      }
-      newStats[i].legDarts = 0;
-      newStats[i].legScore = 0;
-      newStats[i].first9 = [];
-    }
-    setPlayerStats(newStats);
-    setCurrentPlayer((currentPlayer + 1) % numPlayers);
-    setDarts([]);
-    setMultiplier(1);
-  }, [legWins, setWins, sets, legs, numPlayers, gameType, players, playerStats, currentPlayer, showToast, celebrate]);
-
-  const matchWon = useCallback((winner) => {
-    setGameActive(false);
-    setShowBoard(false);
-
-    const ps = playerStats[winner];
-    const avg = ps.darts > 0 ? (ps.score / ps.darts * 3).toFixed(1) : '0';
-    const first9Avg = ps.first9.length > 0 ? (ps.first9.reduce((a, b) => a + b, 0) / ps.first9.length * 3).toFixed(1) : '0';
-    const checkPct = ps.checkAttempts > 0 ? Math.round(ps.checkHits / ps.checkAttempts * 100) : 0;
-
-    // Update global stats
-    setStats(s => {
-      const newStats = {
-        ...s,
-        games: s.games + 1,
-        wins: (winner === 0 || numPlayers === 1) ? s.wins + 1 : s.wins,
-        totalScore: s.totalScore + ps.score,
-        totalDarts: s.totalDarts + ps.darts,
-        recent: [...s.recent.slice(-9), Math.round(parseFloat(avg))],
-        history: [{
-          date: new Date().toISOString(),
-          players: players.slice(0, numPlayers).map(p => p.name),
-          winner: players[winner].name,
-          avg,
-          first9: first9Avg
-        }, ...s.history.slice(0, 49)]
-      };
-      return newStats;
-    });
-
-    // Check achievements
-    setAchievements(a => {
-      const newA = { ...a };
-      if (stats.games + 1 >= 10) newA.games10 = true;
-      if (parseFloat(avg) >= 80) newA.avg80 = true;
-      return newA;
-    });
-
-    // Show winner modal
-    setModal({
-      type: 'winner',
-      winner: players[winner],
-      stats: { avg, first9Avg, checkPct, darts: ps.darts, highTurn: ps.highTurn, legDarts: ps.legDarts }
-    });
-
-    sound('win');
-    celebrate();
-  }, [playerStats, numPlayers, players, stats, sound, celebrate]);
 
   const undoAction = useCallback(() => {
     if (darts.length > 0) {
