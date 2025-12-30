@@ -1156,88 +1156,130 @@ export default function App() {
             </Card>
 
             {/* Format */}
-            <Card title="🎲 Format">
-              {/* Legs Selection */}
-              <div className="text-xs text-white/60 mb-2">LEGS (First to win)</div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="grid grid-cols-4 gap-2 flex-1">
-                  {[1, 3, 5, 7].map(n => (
-                    <SelectButton key={n} selected={legs === n && sets === 0} onClick={() => { setLegs(n); setSets(0); }}>
-                      {n}
-                    </SelectButton>
-                  ))}
-                </div>
-                <div className="flex items-center gap-1 bg-white/10 rounded-xl px-2 py-1">
-                  <button
-                    onClick={() => { if (legs > 1) { setLegs(legs - 1); setSets(0); } }}
-                    className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold"
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    value={sets === 0 ? legs : ''}
-                    onChange={(e) => { const v = parseInt(e.target.value) || 1; setLegs(Math.max(1, Math.min(21, v))); setSets(0); }}
-                    className="w-12 h-8 bg-transparent text-center font-mono font-bold text-lg focus:outline-none"
-                    min="1"
-                    max="21"
-                  />
-                  <button
-                    onClick={() => { if (legs < 21) { setLegs(legs + 1); setSets(0); } }}
-                    className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold"
-                  >
-                    +
-                  </button>
-                </div>
+            <Card title="🎲 Match Format">
+              {/* Quick Format Presets */}
+              <div className="text-xs text-white/60 mb-2">QUICK SELECT</div>
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                <button
+                  onClick={() => { setLegs(1); setSets(0); }}
+                  className={`py-2.5 rounded-xl text-sm font-semibold transition-all ${legs === 1 && sets === 0 ? 'text-white' : 'bg-white/10 hover:bg-white/20'}`}
+                  style={legs === 1 && sets === 0 ? { background: `linear-gradient(135deg, var(--primary), var(--secondary))` } : {}}
+                >
+                  Single Leg
+                </button>
+                <button
+                  onClick={() => { setLegs(3); setSets(0); }}
+                  className={`py-2.5 rounded-xl text-sm font-semibold transition-all ${legs === 3 && sets === 0 ? 'text-white' : 'bg-white/10 hover:bg-white/20'}`}
+                  style={legs === 3 && sets === 0 ? { background: `linear-gradient(135deg, var(--primary), var(--secondary))` } : {}}
+                >
+                  Best of 3
+                </button>
+                <button
+                  onClick={() => { setLegs(5); setSets(0); }}
+                  className={`py-2.5 rounded-xl text-sm font-semibold transition-all ${legs === 5 && sets === 0 ? 'text-white' : 'bg-white/10 hover:bg-white/20'}`}
+                  style={legs === 5 && sets === 0 ? { background: `linear-gradient(135deg, var(--primary), var(--secondary))` } : {}}
+                >
+                  Best of 5
+                </button>
+                <button
+                  onClick={() => { setLegs(3); setSets(3); }}
+                  className={`py-2.5 rounded-xl text-sm font-semibold transition-all ${legs === 3 && sets === 3 ? 'text-white' : 'bg-white/10 hover:bg-white/20'}`}
+                  style={legs === 3 && sets === 3 ? { background: `linear-gradient(135deg, var(--primary), var(--secondary))` } : {}}
+                >
+                  3 Sets
+                </button>
+                <button
+                  onClick={() => { setLegs(5); setSets(5); }}
+                  className={`py-2.5 rounded-xl text-sm font-semibold transition-all ${legs === 5 && sets === 5 ? 'text-white' : 'bg-white/10 hover:bg-white/20'}`}
+                  style={legs === 5 && sets === 5 ? { background: `linear-gradient(135deg, var(--primary), var(--secondary))` } : {}}
+                >
+                  5 Sets
+                </button>
+                <button
+                  onClick={() => { setLegs(5); setSets(7); }}
+                  className={`py-2.5 rounded-xl text-sm font-semibold transition-all ${legs === 5 && sets === 7 ? 'text-white' : 'bg-white/10 hover:bg-white/20'}`}
+                  style={legs === 5 && sets === 7 ? { background: `linear-gradient(135deg, var(--primary), var(--secondary))` } : {}}
+                >
+                  7 Sets
+                </button>
               </div>
 
-              {/* Sets Selection */}
-              <div className="text-xs text-white/60 mb-2">SETS (First to win) <span className="opacity-50">- Optional</span></div>
-              <div className="flex items-center gap-2">
-                <div className="grid grid-cols-4 gap-2 flex-1">
-                  <SelectButton selected={sets === 0} onClick={() => setSets(0)}>
-                    None
-                  </SelectButton>
-                  {[3, 5, 7].map(n => (
-                    <SelectButton key={n} selected={sets === n} onClick={() => { setSets(n); if (legs < 3) setLegs(3); }}>
-                      {n}
-                    </SelectButton>
-                  ))}
+              {/* Custom Format */}
+              <div className="text-xs text-white/60 mb-2">CUSTOM FORMAT</div>
+              <div className="bg-white/5 rounded-xl p-3 space-y-3">
+                {/* Legs per set / match */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold text-sm">{sets > 0 ? 'Legs per Set' : 'Total Legs'}</div>
+                    <div className="text-xs text-white/50">First to {Math.ceil(legs / 2)} wins</div>
+                  </div>
+                  <div className="flex items-center gap-1 bg-white/10 rounded-xl px-2 py-1">
+                    <button
+                      onClick={() => { if (legs > 1) setLegs(legs - 1); }}
+                      className="w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold text-lg"
+                    >
+                      -
+                    </button>
+                    <div className="w-12 text-center font-mono font-bold text-xl">{legs}</div>
+                    <button
+                      onClick={() => { if (legs < 21) setLegs(legs + 1); }}
+                      className="w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold text-lg"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 bg-white/10 rounded-xl px-2 py-1">
-                  <button
-                    onClick={() => { if (sets > 0) setSets(sets - 1); }}
-                    className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold"
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    value={sets}
-                    onChange={(e) => { const v = parseInt(e.target.value) || 0; setSets(Math.max(0, Math.min(13, v))); if (v > 0 && legs < 3) setLegs(3); }}
-                    className="w-12 h-8 bg-transparent text-center font-mono font-bold text-lg focus:outline-none"
-                    min="0"
-                    max="13"
-                  />
-                  <button
-                    onClick={() => { if (sets < 13) { setSets(sets + 1); if (legs < 3) setLegs(3); } }}
-                    className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold"
-                  >
-                    +
-                  </button>
+
+                {/* Number of Sets */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold text-sm">Number of Sets</div>
+                    <div className="text-xs text-white/50">{sets === 0 ? 'Legs only (no sets)' : `First to ${Math.ceil(sets / 2)} sets wins`}</div>
+                  </div>
+                  <div className="flex items-center gap-1 bg-white/10 rounded-xl px-2 py-1">
+                    <button
+                      onClick={() => { if (sets > 0) setSets(sets - 1); }}
+                      className="w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold text-lg"
+                    >
+                      -
+                    </button>
+                    <div className="w-12 text-center font-mono font-bold text-xl">{sets === 0 ? '-' : sets}</div>
+                    <button
+                      onClick={() => { if (sets < 13) setSets(sets + 1); }}
+                      className="w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold text-lg"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
               </div>
 
               {/* Format Summary */}
-              <div className="mt-3 p-3 bg-gradient-to-r from-[var(--primary)]/20 to-[var(--secondary)]/20 rounded-xl text-center border border-[var(--primary)]/30">
-                <span className="font-semibold">
-                  {sets > 0
-                    ? `First to ${Math.ceil(sets / 2)} sets (Best of ${legs} legs per set)`
-                    : legs === 1
-                      ? 'Single leg match'
-                      : `First to ${Math.ceil(legs / 2)} legs (Best of ${legs})`
-                  }
-                </span>
+              <div className="mt-3 p-4 bg-gradient-to-r from-[var(--primary)]/20 to-[var(--secondary)]/20 rounded-xl text-center border border-[var(--primary)]/30">
+                <div className="text-lg font-bold">
+                  {sets > 0 ? (
+                    <>
+                      <span style={{ color: 'var(--primary)' }}>First to {Math.ceil(sets / 2)}</span>
+                      <span className="text-white/60"> sets</span>
+                    </>
+                  ) : legs === 1 ? (
+                    <span>Single Leg Match</span>
+                  ) : (
+                    <>
+                      <span style={{ color: 'var(--primary)' }}>First to {Math.ceil(legs / 2)}</span>
+                      <span className="text-white/60"> legs</span>
+                    </>
+                  )}
+                </div>
+                <div className="text-sm text-white/60 mt-1">
+                  {sets > 0 ? (
+                    `Best of ${sets} sets • Best of ${legs} legs per set`
+                  ) : legs === 1 ? (
+                    'Winner takes all'
+                  ) : (
+                    `Best of ${legs} legs`
+                  )}
+                </div>
               </div>
             </Card>
 
