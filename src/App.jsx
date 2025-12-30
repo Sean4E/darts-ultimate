@@ -204,47 +204,53 @@ const Dartboard = ({ onHit, size = 300, numberSize = 14 }) => {
   );
 };
 
-// Number Pad Component
-const NumberPad = ({ onScore, multiplier, setMultiplier }) => (
+// Dart-by-Dart Pad Component (for entering individual darts with S/D/T)
+const DartPad = ({ onScore, multiplier, setMultiplier }) => (
   <div className="space-y-2">
     <div className="grid grid-cols-3 gap-2">
-      {['Single', 'Double', 'Triple'].map((label, i) => (
+      {[
+        { label: 'Single', mult: 1, color: 'bg-blue-500' },
+        { label: 'Double', mult: 2, color: 'bg-green-500' },
+        { label: 'Triple', mult: 3, color: 'bg-red-500' },
+      ].map(({ label, mult, color }) => (
         <button
           key={label}
-          onClick={() => setMultiplier(i + 1)}
-          className={`py-2 rounded-lg font-semibold text-sm transition-all ${
-            multiplier === i + 1 ? 'bg-primary text-white' : 'bg-card border border-border'
+          onClick={() => setMultiplier(mult)}
+          className={`py-3 rounded-xl font-bold text-sm transition-all ${
+            multiplier === mult ? `${color} text-white shadow-lg` : 'bg-white/10 text-white/70 hover:bg-white/20'
           }`}
         >
           {label}
         </button>
       ))}
     </div>
-    <div className="grid grid-cols-4 gap-1.5">
+    <div className="grid grid-cols-5 gap-1.5">
       {[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].map(n => (
         <button
           key={n}
           onClick={() => onScore(n * multiplier, multiplier === 1 ? `S${n}` : multiplier === 2 ? `D${n}` : `T${n}`, multiplier === 2)}
-          className="h-11 rounded-lg font-mono font-bold bg-bgLight hover:bg-primary/30 active:bg-primary transition-colors"
+          className="h-12 rounded-xl font-mono font-bold text-lg bg-white/10 hover:bg-white/20 active:bg-[var(--primary)] transition-colors"
         >
           {n}
         </button>
       ))}
+    </div>
+    <div className="grid grid-cols-3 gap-1.5">
       <button
-        onClick={() => onScore(multiplier === 2 ? 50 : 25, multiplier === 2 ? 'Bull' : '25', multiplier === 2)}
-        className="h-11 rounded-lg font-mono font-bold bg-primary/30 hover:bg-primary/50 active:bg-primary"
+        onClick={() => onScore(25, '25', false)}
+        className="h-12 rounded-xl font-mono font-bold bg-amber-600/80 hover:bg-amber-600 text-white"
       >
-        {multiplier === 2 ? 'Bull' : '25'}
+        25
       </button>
       <button
         onClick={() => onScore(50, 'Bull', true)}
-        className="h-11 rounded-lg font-mono font-bold bg-primary/30 hover:bg-primary/50 active:bg-primary"
+        className="h-12 rounded-xl font-mono font-bold bg-amber-500 hover:bg-amber-400 text-white"
       >
-        Bull
+        BULL
       </button>
       <button
         onClick={() => onScore(0, 'Miss', false)}
-        className="col-span-2 h-11 rounded-lg font-bold bg-red-500/80 hover:bg-red-500 active:bg-red-600 text-white"
+        className="h-12 rounded-xl font-bold bg-red-500/80 hover:bg-red-500 text-white"
       >
         MISS
       </button>
@@ -252,117 +258,203 @@ const NumberPad = ({ onScore, multiplier, setMultiplier }) => (
   </div>
 );
 
-// Quick Score Input
-const QuickScoreInput = ({ onScore }) => {
-  const [customValue, setCustomValue] = useState('');
+// Keypad Component (for entering 3-dart total directly with large buttons)
+const Keypad = ({ onSubmit, currentScore, checkoutMode }) => {
+  const [inputValue, setInputValue] = useState('');
+  const canCheckout = currentScore <= 170 && currentScore >= 2;
 
-  // Common scores organized by category
-  const highScores = [180, 177, 174, 171, 170, 167, 164, 161, 160];
-  const tonScores = [140, 137, 134, 131, 125, 121, 120, 100];
-  const midScores = [85, 81, 80, 77, 60, 57, 54, 45, 41];
-  const lowScores = [40, 36, 32, 26, 20, 19, 18, 3, 0];
+  const handleDigit = (digit) => {
+    const newValue = inputValue + digit;
+    if (parseInt(newValue) <= 180) {
+      setInputValue(newValue);
+    }
+  };
+
+  const handleClear = () => setInputValue('');
+  const handleBackspace = () => setInputValue(inputValue.slice(0, -1));
+
+  const handleSubmit = (isCheckout = false) => {
+    const score = parseInt(inputValue) || 0;
+    if (score >= 0 && score <= 180) {
+      onSubmit(score, isCheckout);
+      setInputValue('');
+    }
+  };
+
+  const displayValue = inputValue || '0';
+  const scoreValue = parseInt(inputValue) || 0;
+  const wouldCheckout = scoreValue === currentScore && canCheckout;
 
   return (
     <div className="space-y-3">
-      {/* High Scores */}
-      <div>
-        <div className="text-xs text-white/50 mb-1">HIGH SCORES</div>
-        <div className="grid grid-cols-5 gap-1.5">
-          {highScores.map(score => (
-            <button
-              key={score}
-              onClick={() => onScore(score)}
-              className="h-10 rounded-lg font-mono font-semibold bg-gradient-to-br from-[var(--primary)]/30 to-[var(--secondary)]/30 hover:from-[var(--primary)]/50 hover:to-[var(--secondary)]/50 active:from-[var(--primary)] active:to-[var(--secondary)] transition-all"
-            >
-              {score}
-            </button>
-          ))}
+      {/* Display */}
+      <div className="bg-white/10 rounded-2xl p-4 text-center">
+        <div className="text-5xl font-bold font-mono" style={{ color: wouldCheckout ? '#10B981' : 'white' }}>
+          {displayValue}
         </div>
+        {wouldCheckout && (
+          <div className="text-emerald-400 text-sm mt-1 font-semibold">CHECKOUT!</div>
+        )}
       </div>
 
-      {/* Ton+ Scores */}
-      <div>
-        <div className="text-xs text-white/50 mb-1">TON+</div>
-        <div className="grid grid-cols-4 gap-1.5">
-          {tonScores.map(score => (
-            <button
-              key={score}
-              onClick={() => onScore(score)}
-              className="h-10 rounded-lg font-mono font-semibold bg-white/10 hover:bg-white/20 active:bg-[var(--primary)] transition-colors"
-            >
-              {score}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Mid Scores */}
-      <div>
-        <div className="text-xs text-white/50 mb-1">COMMON</div>
-        <div className="grid grid-cols-5 gap-1.5">
-          {midScores.map(score => (
-            <button
-              key={score}
-              onClick={() => onScore(score)}
-              className="h-10 rounded-lg font-mono font-semibold bg-white/10 hover:bg-white/20 active:bg-[var(--primary)] transition-colors"
-            >
-              {score}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Low Scores */}
-      <div>
-        <div className="text-xs text-white/50 mb-1">LOW / MISS</div>
-        <div className="grid grid-cols-5 gap-1.5">
-          {lowScores.map(score => (
-            <button
-              key={score}
-              onClick={() => onScore(score)}
-              className={`h-10 rounded-lg font-mono font-semibold transition-colors ${
-                score === 0 ? 'bg-red-500/80 hover:bg-red-500 col-span-2' : 'bg-white/10 hover:bg-white/20 active:bg-[var(--primary)]'
-              }`}
-            >
-              {score === 0 ? 'MISS (0)' : score}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Custom Input */}
-      <div className="flex gap-2 pt-2 border-t border-white/10">
-        <input
-          type="number"
-          value={customValue}
-          onChange={(e) => setCustomValue(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              const val = parseInt(customValue);
-              if (!isNaN(val) && val >= 0 && val <= 180) {
-                onScore(val);
-                setCustomValue('');
-              }
-            }
-          }}
-          placeholder="Custom (0-180)..."
-          className="flex-1 h-12 px-4 rounded-xl bg-white/10 border border-white/20 font-mono text-center text-lg focus:outline-none focus:border-[var(--primary)]"
-          min="0"
-          max="180"
-        />
+      {/* Number Grid */}
+      <div className="grid grid-cols-3 gap-2">
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+          <button
+            key={n}
+            onClick={() => handleDigit(n.toString())}
+            className="h-14 rounded-xl font-bold text-2xl bg-white/10 hover:bg-white/20 active:bg-[var(--primary)] transition-colors"
+          >
+            {n}
+          </button>
+        ))}
         <button
-          onClick={() => {
-            const val = parseInt(customValue);
-            if (!isNaN(val) && val >= 0 && val <= 180) {
-              onScore(val);
-              setCustomValue('');
-            }
-          }}
-          className="px-6 h-12 rounded-xl font-bold text-white"
-          style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))` }}
+          onClick={handleClear}
+          className="h-14 rounded-xl font-bold text-lg bg-red-500/30 hover:bg-red-500/50 text-red-400"
         >
-          OK
+          CLR
         </button>
+        <button
+          onClick={() => handleDigit('0')}
+          className="h-14 rounded-xl font-bold text-2xl bg-white/10 hover:bg-white/20 active:bg-[var(--primary)] transition-colors"
+        >
+          0
+        </button>
+        <button
+          onClick={handleBackspace}
+          className="h-14 rounded-xl font-bold text-lg bg-white/10 hover:bg-white/20"
+        >
+          {'\u232B'}
+        </button>
+      </div>
+
+      {/* Quick Scores */}
+      <div className="grid grid-cols-5 gap-1.5">
+        {[180, 140, 100, 60, 0].map(score => (
+          <button
+            key={score}
+            onClick={() => { setInputValue(score.toString()); }}
+            className={`h-10 rounded-lg font-mono font-bold text-sm transition-colors ${
+              score === 180 ? 'bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white' :
+              score === 0 ? 'bg-red-500/50 text-red-300' :
+              'bg-white/10 hover:bg-white/20'
+            }`}
+          >
+            {score}
+          </button>
+        ))}
+      </div>
+
+      {/* Submit Buttons */}
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          onClick={() => handleSubmit(false)}
+          disabled={inputValue === ''}
+          className="h-14 rounded-xl font-bold text-lg bg-white/20 hover:bg-white/30 disabled:opacity-30 transition-all"
+        >
+          Submit
+        </button>
+        <button
+          onClick={() => handleSubmit(true)}
+          disabled={!wouldCheckout}
+          className={`h-14 rounded-xl font-bold text-lg transition-all ${
+            wouldCheckout
+              ? 'bg-emerald-500 hover:bg-emerald-400 text-white'
+              : 'bg-emerald-500/20 text-emerald-400/50'
+          }`}
+        >
+          Checkout!
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Quick Scores Component (common 3-dart totals)
+const QuickScores = ({ onSubmit, currentScore }) => {
+  const canCheckout = currentScore <= 170 && currentScore >= 2;
+  const wouldCheckout = (score) => score === currentScore && canCheckout;
+
+  // Organized by scoring zones
+  const scores = {
+    max: [180, 177, 174, 171, 170],
+    high: [167, 164, 161, 160, 158, 157, 156, 155],
+    ton: [140, 139, 138, 137, 136, 135, 134, 133, 132, 131, 130, 125, 121, 120],
+    good: [100, 99, 98, 97, 96, 95, 85, 81, 80],
+    mid: [60, 59, 58, 57, 45, 44, 43, 42, 41, 40],
+    low: [26, 25, 24, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+  };
+
+  const ScoreButton = ({ score }) => {
+    const isCheckout = wouldCheckout(score);
+    return (
+      <button
+        onClick={() => onSubmit(score, isCheckout)}
+        className={`h-11 rounded-xl font-mono font-bold transition-all ${
+          isCheckout
+            ? 'bg-emerald-500 text-white ring-2 ring-emerald-300 shadow-lg shadow-emerald-500/30'
+            : score === 180
+            ? 'bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white'
+            : score === 0
+            ? 'bg-red-500/70 text-white'
+            : score >= 100
+            ? 'bg-white/15 hover:bg-white/25'
+            : 'bg-white/10 hover:bg-white/20'
+        }`}
+      >
+        {score}
+      </button>
+    );
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Maximum */}
+      <div>
+        <div className="text-xs text-white/50 mb-1.5 font-semibold">MAXIMUM</div>
+        <div className="grid grid-cols-5 gap-1.5">
+          {scores.max.map(s => <ScoreButton key={s} score={s} />)}
+        </div>
+      </div>
+
+      {/* High */}
+      <div>
+        <div className="text-xs text-white/50 mb-1.5 font-semibold">HIGH (155-167)</div>
+        <div className="grid grid-cols-4 gap-1.5">
+          {scores.high.map(s => <ScoreButton key={s} score={s} />)}
+        </div>
+      </div>
+
+      {/* Ton+ */}
+      <div>
+        <div className="text-xs text-white/50 mb-1.5 font-semibold">TON+ (120-140)</div>
+        <div className="grid grid-cols-7 gap-1">
+          {scores.ton.map(s => <ScoreButton key={s} score={s} />)}
+        </div>
+      </div>
+
+      {/* Good */}
+      <div>
+        <div className="text-xs text-white/50 mb-1.5 font-semibold">GOOD (80-100)</div>
+        <div className="grid grid-cols-5 gap-1.5">
+          {scores.good.map(s => <ScoreButton key={s} score={s} />)}
+        </div>
+      </div>
+
+      {/* Common */}
+      <div>
+        <div className="text-xs text-white/50 mb-1.5 font-semibold">COMMON (40-60)</div>
+        <div className="grid grid-cols-5 gap-1.5">
+          {scores.mid.map(s => <ScoreButton key={s} score={s} />)}
+        </div>
+      </div>
+
+      {/* Low */}
+      <div>
+        <div className="text-xs text-white/50 mb-1.5 font-semibold">LOW / MISS</div>
+        <div className="grid grid-cols-7 gap-1">
+          {scores.low.map(s => <ScoreButton key={s} score={s} />)}
+        </div>
       </div>
     </div>
   );
@@ -495,7 +587,7 @@ export default function App() {
   const [setWins, setSetWins] = useState([]);
   const [darts, setDarts] = useState([]);
   const [multiplier, setMultiplier] = useState(1);
-  const [inputMode, setInputMode] = useState('board');
+  const [inputMode, setInputMode] = useState('keypad');
   const [undoHistory, setUndoHistory] = useState([]);
   const [playerStats, setPlayerStats] = useState([]);
   const [currentLeg, setCurrentLeg] = useState(1);
@@ -1377,13 +1469,14 @@ export default function App() {
             <div className="flex justify-center gap-1 px-4 py-2 bg-bgMed/50">
               {[
                 { id: 'board', icon: '🎯', label: 'Board' },
-                { id: 'pad', icon: '🔢', label: 'Pad' },
+                { id: 'keypad', icon: '🔢', label: 'Keypad' },
+                { id: 'pad', icon: '🎱', label: 'Darts' },
                 { id: 'quick', icon: '⚡', label: 'Quick' },
               ].map(mode => (
                 <button
                   key={mode.id}
                   onClick={() => { setInputMode(mode.id); haptic(); }}
-                  className={`flex-1 max-w-[100px] py-2 px-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-1 ${
+                  className={`flex-1 max-w-[90px] py-2 px-2 rounded-xl font-semibold text-xs transition-all flex items-center justify-center gap-1 ${
                     inputMode === mode.id
                       ? 'text-white shadow-lg'
                       : 'bg-white/10 text-white/60 hover:bg-white/20'
@@ -1425,7 +1518,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Input Area - Board Mode */}
+            {/* Input Area - Board Mode (interactive dartboard) */}
             {inputMode === 'board' && (
               <div className="flex-1 flex items-center justify-center p-2 relative min-h-0">
                 <Dartboard
@@ -1442,16 +1535,34 @@ export default function App() {
                     }
                     recordDart(score, label, isDouble);
                   }}
-                  size={Math.min(window.innerWidth - 16, window.innerHeight - 380)}
+                  size={Math.min(window.innerWidth - 16, window.innerHeight - 420)}
                   numberSize={boardNumberSize}
                 />
               </div>
             )}
 
-            {/* Input Area - Pad Mode */}
+            {/* Input Area - Keypad Mode (enter 3-dart total with number pad) */}
+            {inputMode === 'keypad' && (
+              <div className="flex-1 overflow-y-auto p-3">
+                <Keypad
+                  currentScore={scores[currentPlayer] - turnTotal}
+                  onSubmit={(score, isCheckout) => {
+                    // Record as 3 virtual darts for stats tracking
+                    const dart1 = Math.min(score, 60);
+                    const dart2 = Math.min(Math.max(score - 60, 0), 60);
+                    const dart3 = Math.max(score - 120, 0);
+                    recordDart(dart1, `${score}`, false);
+                    recordDart(dart2, '', false);
+                    recordDart(dart3, '', isCheckout);
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Input Area - Dart Pad Mode (enter each dart with S/D/T) */}
             {inputMode === 'pad' && (
               <div className="flex-1 overflow-y-auto p-3">
-                <NumberPad
+                <DartPad
                   onScore={(score, label, isDouble) => recordDart(score, label, isDouble)}
                   multiplier={multiplier}
                   setMultiplier={setMultiplier}
@@ -1459,27 +1570,19 @@ export default function App() {
               </div>
             )}
 
-            {/* Input Area - Quick Mode */}
+            {/* Input Area - Quick Mode (tap common scores) */}
             {inputMode === 'quick' && (
               <div className="flex-1 overflow-y-auto p-3">
-                <QuickScoreInput
-                  onScore={(score) => {
-                    // Quick mode enters full turn score directly
-                    if (darts.length === 0) {
-                      // For checkout detection: if score matches remaining and <= 170, assume it's a checkout
-                      const isCheckout = score === scores[currentPlayer] && score <= 170 && score >= 2;
-
-                      // Split score across 3 "virtual" darts for stats
-                      const dart1 = Math.min(score, 60);
-                      const dart2 = Math.min(Math.max(score - 60, 0), 60);
-                      const dart3 = Math.max(score - 120, 0);
-
-                      // Record the darts (label shows total for first dart)
-                      recordDart(dart1, `${score}`, false);
-                      recordDart(dart2, '', false);
-                      // Last dart is "double" if this is a checkout
-                      recordDart(dart3, '', isCheckout);
-                    }
+                <QuickScores
+                  currentScore={scores[currentPlayer] - turnTotal}
+                  onSubmit={(score, isCheckout) => {
+                    // Record as 3 virtual darts for stats tracking
+                    const dart1 = Math.min(score, 60);
+                    const dart2 = Math.min(Math.max(score - 60, 0), 60);
+                    const dart3 = Math.max(score - 120, 0);
+                    recordDart(dart1, `${score}`, false);
+                    recordDart(dart2, '', false);
+                    recordDart(dart3, '', isCheckout);
                   }}
                 />
               </div>
