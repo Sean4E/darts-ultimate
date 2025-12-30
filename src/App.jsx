@@ -135,72 +135,183 @@ const speak = (text) => {
 
 // ============ COMPONENTS ============
 
-// Interactive Dartboard SVG
+// Interactive Dartboard SVG with mobile-friendly segment selector
 const Dartboard = ({ onHit, size = 300, numberSize = 14 }) => {
   const nums = [20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
   const cx = 200, cy = 200;
+  const [selectedNumber, setSelectedNumber] = useState(null);
+  const [isMobile] = useState(() => 'ontouchstart' in window || navigator.maxTouchPoints > 0);
 
-  const segment = (ro, ri, sa, ea, fill, n, mult) => {
+  // Handle segment tap - on mobile show selector, on desktop hit directly
+  const handleSegmentTap = (n, mult) => {
+    if (isMobile && mult !== 2) {
+      // On mobile, tapping single area shows the segment selector for that number
+      setSelectedNumber(n);
+    } else {
+      // Desktop or already on double/treble - hit directly
+      onHit(n, mult);
+    }
+  };
+
+  // Handle bull tap
+  const handleBullTap = (score, isDouble) => {
+    if (isMobile) {
+      setSelectedNumber('bull');
+    } else {
+      onHit(score, isDouble ? 2 : 1);
+    }
+  };
+
+  const segment = (ro, ri, sa, ea, fill, n, mult, isHighlight = false) => {
     const x1o = cx + Math.cos(sa) * ro, y1o = cy + Math.sin(sa) * ro;
     const x2o = cx + Math.cos(ea) * ro, y2o = cy + Math.sin(ea) * ro;
     const x1i = cx + Math.cos(ea) * ri, y1i = cy + Math.sin(ea) * ri;
     const x2i = cx + Math.cos(sa) * ri, y2i = cy + Math.sin(sa) * ri;
     const d = `M${x1o} ${y1o} A${ro} ${ro} 0 0 1 ${x2o} ${y2o} L${x1i} ${y1i} A${ri} ${ri} 0 0 0 ${x2i} ${y2i}Z`;
+
+    // CSS class for hover scaling on desktop (doubles and trebles only)
+    const hoverClass = (mult === 2 || mult === 3)
+      ? 'dartboard-segment-highlight cursor-pointer'
+      : 'cursor-pointer';
+
     return (
       <path
         key={`${n}-${mult}-${ro}`}
         d={d}
-        fill={fill}
-        stroke="#333"
-        strokeWidth="0.5"
-        className="cursor-pointer transition-all duration-100 hover:brightness-125 active:brightness-150"
-        onClick={() => onHit(n, mult)}
+        fill={isHighlight ? '#FFD700' : fill}
+        stroke={isHighlight ? '#FFF' : '#333'}
+        strokeWidth={isHighlight ? '2' : '0.5'}
+        className={`${hoverClass} transition-all duration-100 active:brightness-150`}
+        onClick={() => handleSegmentTap(n, mult)}
+        style={{ transformOrigin: `${cx}px ${cy}px` }}
       />
     );
   };
 
-  // Calculate number position based on size - larger numbers sit further out
   const numberRadius = 188 + (numberSize - 12) * 0.5;
 
   return (
-    <svg viewBox="0 0 400 400" style={{ width: size, height: size, filter: 'drop-shadow(0 10px 40px rgba(0,0,0,0.5))' }}>
-      <circle cx={cx} cy={cy} r="180" fill="#1a1a1a" />
-      {nums.map((n, i) => {
-        const sa = (i * 18 - 99) * Math.PI / 180;
-        const ea = ((i + 1) * 18 - 99) * Math.PI / 180;
-        const even = i % 2 === 0;
-        return (
-          <React.Fragment key={n}>
-            {segment(180, 170, sa, ea, even ? '#e63946' : '#2a9d8f', n, 2)}
-            {segment(170, 107, sa, ea, even ? '#1a1a1a' : '#f5e6c8', n, 1)}
-            {segment(107, 99, sa, ea, even ? '#e63946' : '#2a9d8f', n, 3)}
-            {segment(99, 40, sa, ea, even ? '#1a1a1a' : '#f5e6c8', n, 1)}
-          </React.Fragment>
-        );
-      })}
-      <circle cx={cx} cy={cy} r="40" fill="#2a9d8f" className="cursor-pointer hover:brightness-125 active:brightness-150" onClick={() => onHit(25, 1)} />
-      <circle cx={cx} cy={cy} r="16" fill="#e63946" className="cursor-pointer hover:brightness-125 active:brightness-150" onClick={() => onHit(50, 2)} />
-      {nums.map((n, i) => {
-        const a = (i * 18 - 90) * Math.PI / 180;
-        const x = cx + Math.cos(a) * numberRadius;
-        const y = cy + Math.sin(a) * numberRadius;
-        return (
-          <text
-            key={`num-${n}`}
-            x={x}
-            y={y}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill="white"
-            fontSize={numberSize}
-            fontWeight="700"
-            style={{ pointerEvents: 'none', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}
+    <div className="relative">
+      <svg viewBox="0 0 400 400" style={{ width: size, height: size, filter: 'drop-shadow(0 8px 32px rgba(0,0,0,0.5))' }}>
+        <circle cx={cx} cy={cy} r="180" fill="#1a1a1a" />
+        {nums.map((n, i) => {
+          const sa = (i * 18 - 99) * Math.PI / 180;
+          const ea = ((i + 1) * 18 - 99) * Math.PI / 180;
+          const even = i % 2 === 0;
+          const isSelected = selectedNumber === n;
+          return (
+            <React.Fragment key={n}>
+              {segment(180, 170, sa, ea, even ? '#e63946' : '#2a9d8f', n, 2, isSelected)}
+              {segment(170, 107, sa, ea, even ? '#1a1a1a' : '#f5e6c8', n, 1, isSelected)}
+              {segment(107, 99, sa, ea, even ? '#e63946' : '#2a9d8f', n, 3, isSelected)}
+              {segment(99, 40, sa, ea, even ? '#1a1a1a' : '#f5e6c8', n, 1, isSelected)}
+            </React.Fragment>
+          );
+        })}
+        <circle
+          cx={cx} cy={cy} r="40"
+          fill={selectedNumber === 'bull' ? '#FFD700' : '#2a9d8f'}
+          className="cursor-pointer transition-all duration-100 active:brightness-150"
+          onClick={() => handleBullTap(25, false)}
+        />
+        <circle
+          cx={cx} cy={cy} r="16"
+          fill={selectedNumber === 'bull' ? '#FFF' : '#e63946'}
+          className="cursor-pointer transition-all duration-100 active:brightness-150"
+          onClick={() => handleBullTap(50, true)}
+        />
+        {nums.map((n, i) => {
+          const a = (i * 18 - 90) * Math.PI / 180;
+          const x = cx + Math.cos(a) * numberRadius;
+          const y = cy + Math.sin(a) * numberRadius;
+          return (
+            <text
+              key={`num-${n}`}
+              x={x}
+              y={y}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill="white"
+              fontSize={numberSize}
+              fontWeight="700"
+              style={{ pointerEvents: 'none', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}
+            >
+              {n}
+            </text>
+          );
+        })}
+      </svg>
+
+      {/* Mobile Segment Selector Popup */}
+      {selectedNumber !== null && (
+        <div
+          className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-10"
+          onClick={() => setSelectedNumber(null)}
+        >
+          <div
+            className="bg-[var(--bg-dark)] rounded-2xl p-4 shadow-2xl border border-white/20 animate-fadeIn"
+            onClick={e => e.stopPropagation()}
           >
-            {n}
-          </text>
-        );
-      })}
-    </svg>
+            {selectedNumber === 'bull' ? (
+              <>
+                <div className="text-center mb-3">
+                  <span className="text-2xl font-bold">BULL</span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { onHit(25, 1); setSelectedNumber(null); }}
+                    className="flex-1 py-4 px-6 rounded-xl font-bold text-xl bg-amber-600 text-white active:scale-95 transition-transform"
+                  >
+                    25
+                  </button>
+                  <button
+                    onClick={() => { onHit(50, 2); setSelectedNumber(null); }}
+                    className="flex-1 py-4 px-6 rounded-xl font-bold text-xl bg-amber-500 text-white active:scale-95 transition-transform"
+                  >
+                    BULL 50
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-center mb-3">
+                  <span className="text-3xl font-bold">{selectedNumber}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    onClick={() => { onHit(selectedNumber, 1); setSelectedNumber(null); }}
+                    className="py-4 px-5 rounded-xl font-bold text-lg bg-blue-500 text-white active:scale-95 transition-transform"
+                  >
+                    <div className="text-xs opacity-70">Single</div>
+                    <div>{selectedNumber}</div>
+                  </button>
+                  <button
+                    onClick={() => { onHit(selectedNumber, 2); setSelectedNumber(null); }}
+                    className="py-4 px-5 rounded-xl font-bold text-lg bg-green-500 text-white active:scale-95 transition-transform"
+                  >
+                    <div className="text-xs opacity-70">Double</div>
+                    <div>{selectedNumber * 2}</div>
+                  </button>
+                  <button
+                    onClick={() => { onHit(selectedNumber, 3); setSelectedNumber(null); }}
+                    className="py-4 px-5 rounded-xl font-bold text-lg bg-red-500 text-white active:scale-95 transition-transform"
+                  >
+                    <div className="text-xs opacity-70">Triple</div>
+                    <div>{selectedNumber * 3}</div>
+                  </button>
+                </div>
+              </>
+            )}
+            <button
+              onClick={() => setSelectedNumber(null)}
+              className="w-full mt-3 py-2 rounded-xl bg-white/10 text-white/60 font-semibold"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -843,7 +954,7 @@ export default function App() {
     newLegWins[winner]++;
     setLegWins(newLegWins);
 
-    const neededLegs = sets > 0 ? Math.ceil(3 / 2) : Math.ceil(legs / 2);
+    const neededLegs = Math.ceil(legs / 2);
 
     if (sets > 0) {
       // Playing with sets
@@ -1427,46 +1538,69 @@ export default function App() {
         {/* ========== FULLSCREEN BOARD ========== */}
         {gameActive && showBoard && (
           <div className="fixed inset-0 z-40 flex flex-col bg-[var(--bg-dark)]">
-            {/* Scoreboard */}
-            <div className="flex gap-1.5 p-2 bg-bgMed safe-top">
+            {/* Compact Header - Scores + Darts in one row */}
+            <div className="flex items-stretch gap-1 p-1.5 bg-bgMed safe-top">
+              {/* Player Scores */}
               {players.slice(0, numPlayers).map((p, i) => {
-                const ps = playerStats[i];
                 const isActive = i === currentPlayer;
                 const displayScore = i === currentPlayer ? scores[i] - turnTotal : scores[i];
-                const avg = ps?.darts > 0 ? (ps.score / ps.darts * 3).toFixed(1) : '0.0';
-
                 return (
                   <div
                     key={i}
-                    className={`flex-1 rounded-xl p-2 text-center transition-all ${
-                      isActive ? 'ring-2 ring-[var(--primary)] shadow-lg shadow-[var(--primary)]/30' : ''
+                    className={`flex-1 rounded-lg p-1.5 text-center transition-all ${
+                      isActive ? 'ring-2 ring-[var(--primary)]' : ''
                     }`}
-                    style={{ background: isActive ? `${p.color}30` : 'rgba(255,255,255,0.05)' }}
+                    style={{ background: isActive ? `${p.color}40` : 'rgba(255,255,255,0.05)' }}
                   >
-                    <div className="flex items-center justify-center gap-1">
-                      <span className="text-lg">{p.avatar}</span>
-                      {isActive && <span className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse" />}
+                    <div className="flex items-center justify-center gap-1 text-xs">
+                      <span>{p.avatar}</span>
+                      <span className="truncate max-w-[50px]">{p.name}</span>
                     </div>
-                    <div className="text-xs opacity-70 truncate">{p.name}</div>
-                    <div className="text-3xl font-bold font-mono" style={{ color: isActive ? 'var(--primary)' : 'white' }}>
+                    <div className="text-2xl font-bold font-mono" style={{ color: isActive ? 'var(--primary)' : 'white' }}>
                       {displayScore}
                     </div>
-                    <div className="text-xs opacity-50">Avg: {avg} | L: {legWins[i]}{sets > 0 ? ` | S: ${setWins[i]}` : ''}</div>
+                    <div className="text-[10px] opacity-50">L:{legWins[i]}{sets > 0 ? ` S:${setWins[i]}` : ''}</div>
                   </div>
                 );
               })}
+              {/* Current Turn Info */}
+              <div className="flex flex-col justify-center gap-1 px-2 min-w-[80px]">
+                <div className="flex gap-0.5">
+                  {[0, 1, 2].map(i => (
+                    <div
+                      key={i}
+                      className={`flex-1 h-6 rounded text-xs font-mono font-bold flex items-center justify-center ${
+                        darts[i] ? 'bg-[var(--primary)]' : 'bg-white/10'
+                      }`}
+                    >
+                      {darts[i]?.label?.slice(0,3) || '-'}
+                    </div>
+                  ))}
+                </div>
+                <div className="text-center font-mono font-bold text-lg" style={{ color: 'var(--primary)' }}>
+                  {turnTotal}
+                </div>
+              </div>
             </div>
 
             {/* Close Button */}
             <button
               onClick={endGame}
-              className="absolute top-safe right-2 z-50 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center mt-2"
+              className="absolute top-safe right-1 z-50 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center"
             >
-              <X size={20} />
+              <X size={16} />
             </button>
 
-            {/* Input Mode Tabs */}
-            <div className="flex justify-center gap-1 px-4 py-2 bg-bgMed/50">
+            {/* Checkout Hint - Compact */}
+            {checkout && (
+              <div className="py-1.5 px-3 text-center text-sm" style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))` }}>
+                <span className="opacity-80">Checkout: </span>
+                <span className="font-bold font-mono">{checkout}</span>
+              </div>
+            )}
+
+            {/* Input Mode Tabs - Compact */}
+            <div className="flex justify-center gap-0.5 px-2 py-1.5 bg-black/30">
               {[
                 { id: 'board', icon: '🎯', label: 'Board' },
                 { id: 'keypad', icon: '🔢', label: 'Keypad' },
@@ -1476,160 +1610,143 @@ export default function App() {
                 <button
                   key={mode.id}
                   onClick={() => { setInputMode(mode.id); haptic(); }}
-                  className={`flex-1 max-w-[90px] py-2 px-2 rounded-xl font-semibold text-xs transition-all flex items-center justify-center gap-1 ${
+                  className={`flex-1 py-1.5 px-1 rounded-lg font-semibold text-xs transition-all flex items-center justify-center gap-0.5 ${
                     inputMode === mode.id
-                      ? 'text-white shadow-lg'
-                      : 'bg-white/10 text-white/60 hover:bg-white/20'
+                      ? 'text-white'
+                      : 'bg-white/10 text-white/60'
                   }`}
                   style={inputMode === mode.id ? { background: `linear-gradient(135deg, var(--primary), var(--secondary))` } : {}}
                 >
-                  <span>{mode.icon}</span>
-                  <span className="hidden sm:inline">{mode.label}</span>
+                  <span className="text-sm">{mode.icon}</span>
+                  <span className="hidden xs:inline">{mode.label}</span>
                 </button>
               ))}
             </div>
 
-            {/* Checkout Hint */}
-            {checkout && (
-              <div className="py-2 px-4 text-center" style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))` }}>
-                <span className="text-xs opacity-80">CHECKOUT: </span>
-                <span className="font-bold font-mono text-lg">{checkout}</span>
-              </div>
-            )}
-
-            {/* Darts thrown display */}
-            <div className="flex justify-center gap-1.5 py-2 px-4">
-              {[0, 1, 2].map(i => (
-                <div
-                  key={i}
-                  className={`min-w-[52px] h-9 rounded-xl flex items-center justify-center font-mono text-sm font-bold transition-all ${
-                    darts[i] ? '' : 'bg-white/10'
-                  }`}
-                  style={darts[i] ? { background: `linear-gradient(135deg, var(--primary), var(--secondary))` } : {}}
-                >
-                  {darts[i]?.label || '-'}
-                </div>
-              ))}
-              <div
-                className="min-w-[60px] h-9 rounded-xl flex items-center justify-center font-mono font-bold text-lg"
-                style={{ background: 'var(--primary)' }}
-              >
-                {turnTotal}
-              </div>
-            </div>
-
-            {/* Input Area - Board Mode (interactive dartboard) */}
+            {/* Input Area - Board Mode (MAXIMIZED dartboard) */}
             {inputMode === 'board' && (
-              <div className="flex-1 flex items-center justify-center p-2 relative min-h-0">
-                <Dartboard
-                  onHit={(n, mult) => {
-                    let score, label, isDouble;
-                    if (n === 50) {
-                      score = 50; label = 'Bull'; isDouble = true;
-                    } else if (n === 25) {
-                      score = 25; label = '25'; isDouble = false;
-                    } else {
-                      score = n * mult;
-                      label = mult === 1 ? `S${n}` : mult === 2 ? `D${n}` : `T${n}`;
-                      isDouble = mult === 2;
-                    }
-                    recordDart(score, label, isDouble);
-                  }}
-                  size={Math.min(window.innerWidth - 16, window.innerHeight - 420)}
-                  numberSize={boardNumberSize}
-                />
+              <div className="flex-1 flex flex-col min-h-0">
+                <div className="flex-1 flex items-center justify-center p-1">
+                  <Dartboard
+                    onHit={(n, mult) => {
+                      let score, label, isDouble;
+                      if (n === 50) {
+                        score = 50; label = 'Bull'; isDouble = true;
+                      } else if (n === 25) {
+                        score = 25; label = '25'; isDouble = false;
+                      } else {
+                        score = n * mult;
+                        label = mult === 1 ? `S${n}` : mult === 2 ? `D${n}` : `T${n}`;
+                        isDouble = mult === 2;
+                      }
+                      recordDart(score, label, isDouble);
+                    }}
+                    size={Math.min(window.innerWidth - 8, window.innerHeight - 280)}
+                    numberSize={boardNumberSize}
+                  />
+                </div>
+                {/* Compact Bottom Actions for Board Mode */}
+                <div className="flex gap-1.5 p-2 bg-bgMed safe-bottom">
+                  <button
+                    onClick={() => recordDart(0, 'Miss', false)}
+                    className="py-3 px-4 rounded-xl font-bold bg-red-500 text-white active:scale-95 transition-transform"
+                  >
+                    Miss
+                  </button>
+                  <button
+                    onClick={undoAction}
+                    className="flex-1 py-3 rounded-xl font-bold bg-white/10 flex items-center justify-center gap-1 active:scale-95 transition-transform"
+                  >
+                    <RotateCcw size={16} /> Undo
+                  </button>
+                  <button
+                    onClick={nextTurn}
+                    className="flex-1 py-3 rounded-xl font-bold text-white flex items-center justify-center gap-1 active:scale-95 transition-transform"
+                    style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))` }}
+                  >
+                    Next <ChevronRight size={16} />
+                  </button>
+                </div>
               </div>
             )}
 
             {/* Input Area - Keypad Mode (enter 3-dart total with number pad) */}
             {inputMode === 'keypad' && (
-              <div className="flex-1 overflow-y-auto p-3">
-                <Keypad
-                  currentScore={scores[currentPlayer] - turnTotal}
-                  onSubmit={(score, isCheckout) => {
-                    // Record as 3 virtual darts for stats tracking
-                    const dart1 = Math.min(score, 60);
-                    const dart2 = Math.min(Math.max(score - 60, 0), 60);
-                    const dart3 = Math.max(score - 120, 0);
-                    recordDart(dart1, `${score}`, false);
-                    recordDart(dart2, '', false);
-                    recordDart(dart3, '', isCheckout);
-                  }}
-                />
+              <div className="flex-1 flex flex-col min-h-0">
+                <div className="flex-1 overflow-y-auto p-3">
+                  <Keypad
+                    currentScore={scores[currentPlayer] - turnTotal}
+                    onSubmit={(score, isCheckout) => {
+                      const dart1 = Math.min(score, 60);
+                      const dart2 = Math.min(Math.max(score - 60, 0), 60);
+                      const dart3 = Math.max(score - 120, 0);
+                      recordDart(dart1, `${score}`, false);
+                      recordDart(dart2, '', false);
+                      recordDart(dart3, '', isCheckout);
+                    }}
+                  />
+                </div>
+                {/* Stats + Actions */}
+                <div className="flex items-center gap-2 p-2 bg-bgMed safe-bottom">
+                  <div className="flex gap-3 text-xs flex-1">
+                    <div><span className="opacity-50">Avg:</span> <span className="font-mono font-bold">{playerStats[currentPlayer]?.darts > 0 ? (playerStats[currentPlayer].score / playerStats[currentPlayer].darts * 3).toFixed(1) : '0.0'}</span></div>
+                    <div><span className="opacity-50">Darts:</span> <span className="font-mono font-bold">{playerStats[currentPlayer]?.legDarts || 0}</span></div>
+                  </div>
+                  <button onClick={undoAction} className="py-2.5 px-4 rounded-xl font-bold bg-white/10 active:scale-95"><RotateCcw size={16} /></button>
+                  <button onClick={nextTurn} className="py-2.5 px-6 rounded-xl font-bold text-white active:scale-95" style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))` }}>Next</button>
+                </div>
               </div>
             )}
 
             {/* Input Area - Dart Pad Mode (enter each dart with S/D/T) */}
             {inputMode === 'pad' && (
-              <div className="flex-1 overflow-y-auto p-3">
-                <DartPad
-                  onScore={(score, label, isDouble) => recordDart(score, label, isDouble)}
-                  multiplier={multiplier}
-                  setMultiplier={setMultiplier}
-                />
+              <div className="flex-1 flex flex-col min-h-0">
+                <div className="flex-1 overflow-y-auto p-3">
+                  <DartPad
+                    onScore={(score, label, isDouble) => recordDart(score, label, isDouble)}
+                    multiplier={multiplier}
+                    setMultiplier={setMultiplier}
+                  />
+                </div>
+                {/* Stats + Actions */}
+                <div className="flex items-center gap-2 p-2 bg-bgMed safe-bottom">
+                  <div className="flex gap-3 text-xs flex-1">
+                    <div><span className="opacity-50">Avg:</span> <span className="font-mono font-bold">{playerStats[currentPlayer]?.darts > 0 ? (playerStats[currentPlayer].score / playerStats[currentPlayer].darts * 3).toFixed(1) : '0.0'}</span></div>
+                    <div><span className="opacity-50">Darts:</span> <span className="font-mono font-bold">{playerStats[currentPlayer]?.legDarts || 0}</span></div>
+                  </div>
+                  <button onClick={undoAction} className="py-2.5 px-4 rounded-xl font-bold bg-white/10 active:scale-95"><RotateCcw size={16} /></button>
+                  <button onClick={nextTurn} className="py-2.5 px-6 rounded-xl font-bold text-white active:scale-95" style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))` }}>Next</button>
+                </div>
               </div>
             )}
 
             {/* Input Area - Quick Mode (tap common scores) */}
             {inputMode === 'quick' && (
-              <div className="flex-1 overflow-y-auto p-3">
-                <QuickScores
-                  currentScore={scores[currentPlayer] - turnTotal}
-                  onSubmit={(score, isCheckout) => {
-                    // Record as 3 virtual darts for stats tracking
-                    const dart1 = Math.min(score, 60);
-                    const dart2 = Math.min(Math.max(score - 60, 0), 60);
-                    const dart3 = Math.max(score - 120, 0);
-                    recordDart(dart1, `${score}`, false);
-                    recordDart(dart2, '', false);
-                    recordDart(dart3, '', isCheckout);
-                  }}
-                />
+              <div className="flex-1 flex flex-col min-h-0">
+                <div className="flex-1 overflow-y-auto p-3">
+                  <QuickScores
+                    currentScore={scores[currentPlayer] - turnTotal}
+                    onSubmit={(score, isCheckout) => {
+                      const dart1 = Math.min(score, 60);
+                      const dart2 = Math.min(Math.max(score - 60, 0), 60);
+                      const dart3 = Math.max(score - 120, 0);
+                      recordDart(dart1, `${score}`, false);
+                      recordDart(dart2, '', false);
+                      recordDart(dart3, '', isCheckout);
+                    }}
+                  />
+                </div>
+                {/* Stats + Actions */}
+                <div className="flex items-center gap-2 p-2 bg-bgMed safe-bottom">
+                  <div className="flex gap-3 text-xs flex-1">
+                    <div><span className="opacity-50">Avg:</span> <span className="font-mono font-bold">{playerStats[currentPlayer]?.darts > 0 ? (playerStats[currentPlayer].score / playerStats[currentPlayer].darts * 3).toFixed(1) : '0.0'}</span></div>
+                    <div><span className="opacity-50">Darts:</span> <span className="font-mono font-bold">{playerStats[currentPlayer]?.legDarts || 0}</span></div>
+                  </div>
+                  <button onClick={undoAction} className="py-2.5 px-4 rounded-xl font-bold bg-white/10 active:scale-95"><RotateCcw size={16} /></button>
+                  <button onClick={nextTurn} className="py-2.5 px-6 rounded-xl font-bold text-white active:scale-95" style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))` }}>Next</button>
+                </div>
               </div>
             )}
-
-            {/* Stats Bar */}
-            <div className="flex justify-center gap-6 py-2 bg-white/5 text-xs">
-              <div className="text-center">
-                <div className="font-mono font-bold">{playerStats[currentPlayer]?.legDarts > 0 ? (playerStats[currentPlayer].legScore / playerStats[currentPlayer].legDarts * 3).toFixed(1) : '0.0'}</div>
-                <div className="opacity-50">Leg Avg</div>
-              </div>
-              <div className="text-center">
-                <div className="font-mono font-bold">{playerStats[currentPlayer]?.darts > 0 ? (playerStats[currentPlayer].score / playerStats[currentPlayer].darts * 3).toFixed(1) : '0.0'}</div>
-                <div className="opacity-50">Match Avg</div>
-              </div>
-              <div className="text-center">
-                <div className="font-mono font-bold">{playerStats[currentPlayer]?.legDarts || 0}</div>
-                <div className="opacity-50">Darts</div>
-              </div>
-              <div className="text-center">
-                <div className="font-mono font-bold">{playerStats[currentPlayer]?.highTurn || 0}</div>
-                <div className="opacity-50">High</div>
-              </div>
-            </div>
-
-            {/* Bottom Actions */}
-            <div className="flex gap-2 p-3 bg-bgMed safe-bottom">
-              <button
-                onClick={() => recordDart(0, 'Miss', false)}
-                className="flex-[0.6] py-3.5 rounded-xl font-bold bg-red-500 text-white active:scale-95 transition-transform"
-              >
-                ✕ Miss
-              </button>
-              <button
-                onClick={undoAction}
-                className="flex-1 py-3.5 rounded-xl font-bold bg-white/10 flex items-center justify-center gap-2 active:scale-95 transition-transform"
-              >
-                <RotateCcw size={18} /> Undo
-              </button>
-              <button
-                onClick={nextTurn}
-                className="flex-1 py-3.5 rounded-xl font-bold text-white flex items-center justify-center gap-2 active:scale-95 transition-transform"
-                style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary))` }}
-              >
-                Next <ChevronRight size={18} />
-              </button>
-            </div>
           </div>
         )}
 
