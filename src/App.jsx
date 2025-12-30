@@ -1502,7 +1502,7 @@ export default function App() {
 
             {/* Daily Tip */}
             <div className="bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] rounded-xl p-4">
-              <div className="text-xs uppercase opacity-80 flex items-center gap-1"><Lightbulb size={12} /> Tip</div>
+              <div className="text-xs uppercase opacity-80 flex items-center gap-1">💡 Tip</div>
               <div className="font-bold mt-1">{tip.title}</div>
               <div className="text-sm opacity-90">{tip.text}</div>
             </div>
