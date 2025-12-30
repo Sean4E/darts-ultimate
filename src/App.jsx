@@ -1456,8 +1456,8 @@ export default function App() {
             <span className="font-bold text-lg">Darts Ultimate</span>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => setModal({ type: 'history' })} className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition-colors">
-              <Clock size={18} />
+            <button onClick={() => setModal({ type: 'history' })} className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition-colors text-lg">
+              📜
             </button>
             <button onClick={() => setModal({ type: 'settings' })} className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition-colors">
               <Settings size={18} />
